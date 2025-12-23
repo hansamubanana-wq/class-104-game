@@ -7,6 +7,9 @@ import { playSound } from './SoundManager';
 function App() {
   const [screen, setScreen] = useState('start');
   
+  // 設定
+  const [isMuted, setIsMuted] = useState(false); // ミュート状態
+  
   // ゲーム設定
   const [gameMode, setGameMode] = useState('reading');
   const [targetCount, setTargetCount] = useState(10);
@@ -23,7 +26,7 @@ function App() {
   const [isShake, setIsShake] = useState(false);
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState("0.00");
 
-  // ランキング (v3)
+  // ランキング
   const [ranking, setRanking] = useState(() => {
     const saved = localStorage.getItem('class104_ranking_v3');
     return saved ? JSON.parse(saved) : [];
@@ -50,10 +53,15 @@ function App() {
     return () => clearInterval(interval);
   }, [screen, startTime, endTime]);
 
+  // 音を鳴らすラッパー関数
+  const playSoundSafe = (type) => {
+    if (!isMuted) playSound(type);
+  };
+
   // --- ゲーム開始 ---
   
   const startNormalGame = (mode, count) => {
-    playSound('dummy');
+    playSoundSafe('dummy');
     setGameMode(mode);
     setTargetCount(count);
     setIsRandomOrder(true);
@@ -68,7 +76,7 @@ function App() {
     
     if(targets.length === 0) return alert("生徒を選んでください");
     
-    setTargetCount(targets.length); // 練習時はその人数が目標
+    setTargetCount(targets.length); 
     setIsPractice(true);
     setupGame(targets, mode, isRandomOrder);
   }
@@ -95,8 +103,6 @@ function App() {
   };
 
   const nextQuestion = (newCompletedIds) => {
-    // 【修正】ここがバグの原因でした。
-    // 問題リストの数(37)ではなく、目標人数(10)に達したら終了させます。
     if (newCompletedIds.length >= targetCount) {
       finishGame();
       return;
@@ -110,7 +116,7 @@ function App() {
     setEndTime(end);
     setCurrentStudent(null);
     setScreen('result');
-    playSound('clear');
+    playSoundSafe('clear');
     triggerConfetti();
 
     const currentTime = (end - startTime) / 1000;
@@ -141,7 +147,7 @@ function App() {
     const cleanTarget = targetRaw.replace(/\s+/g, '');
 
     if (cleanVal === cleanTarget) {
-      playSound('correct');
+      playSoundSafe('correct');
       const newCompletedIds = [...completedIds, currentStudent.id];
       setCompletedIds(newCompletedIds);
       setInputVal('');
@@ -154,6 +160,7 @@ function App() {
   };
 
   const triggerConfetti = () => {
+    if(!isMuted) playSoundSafe('clear'); // 紙吹雪のタイミングでも音を確認
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
   };
 
@@ -175,11 +182,28 @@ function App() {
       .slice(0, 5);
   };
 
+  // ランキングリセット機能
+  const resetRanking = () => {
+    if (confirm("ランキング履歴をすべて削除しますか？\n（この操作は元に戻せません）")) {
+      localStorage.removeItem('class104_ranking_v3');
+      setRanking([]);
+      playSoundSafe('dummy'); // 音確認用（ミュートなら鳴らない）
+    }
+  };
+
   const isTeacher = (id) => id === 37;
 
   return (
     <div className="container">
-      {/* タイトルを固定配置（ズレ防止） */}
+      {/* ミュートボタン（右上） */}
+      <button 
+        className="mute-button" 
+        onClick={() => setIsMuted(!isMuted)}
+        title={isMuted ? "音声をオンにする" : "音声をオフにする"}
+      >
+        {isMuted ? "🔇" : "🔊"}
+      </button>
+
       <h1>104 名前当て</h1>
 
       {screen === 'start' && (
@@ -208,12 +232,15 @@ function App() {
           </div>
 
           <div className="ranking-area">
-            <div className="ranking-tabs">
-              <button className={rankingTab === '10-reading' ? 'active' : ''} onClick={()=>setRankingTab('10-reading')}>10ひ</button>
-              <button className={rankingTab === '10-name' ? 'active' : ''} onClick={()=>setRankingTab('10-name')}>10漢</button>
-              <button className={rankingTab === '37-reading' ? 'active' : ''} onClick={()=>setRankingTab('37-reading')}>全ひ</button>
-              <button className={rankingTab === '37-name' ? 'active' : ''} onClick={()=>setRankingTab('37-name')}>全漢</button>
+            <div className="ranking-header">
+              <div className="ranking-tabs">
+                <button className={rankingTab === '10-reading' ? 'active' : ''} onClick={()=>setRankingTab('10-reading')}>10ひ</button>
+                <button className={rankingTab === '10-name' ? 'active' : ''} onClick={()=>setRankingTab('10-name')}>10漢</button>
+                <button className={rankingTab === '37-reading' ? 'active' : ''} onClick={()=>setRankingTab('37-reading')}>全ひ</button>
+                <button className={rankingTab === '37-name' ? 'active' : ''} onClick={()=>setRankingTab('37-name')}>全漢</button>
+              </div>
             </div>
+            
             <ul className="ranking-list">
               {getFilteredRanking().length === 0 && <li className="no-data">記録なし</li>}
               {getFilteredRanking().map((r, i) => (
@@ -224,6 +251,10 @@ function App() {
                 </li>
               ))}
             </ul>
+            {/* 履歴削除ボタン（データがあるときだけ表示） */}
+            {ranking.length > 0 && (
+              <button onClick={resetRanking} className="reset-rank-btn">🗑 履歴を削除</button>
+            )}
           </div>
         </div>
       )}
