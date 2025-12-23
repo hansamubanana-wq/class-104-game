@@ -1,89 +1,121 @@
 /* カスタム色定義 */
 :root {
-  --primary-color: #4a90e2;
-  --primary-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --secondary-grad: linear-gradient(135deg, #ff6b6b 0%, #f067b4 100%);
-  --bg-gradient: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+  --primary-color: #3a6073;
+  --secondary-color: #c94b4b;
+  --gold-grad: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
+  --gold-color: #b38728;
+  --btn-primary-grad: linear-gradient(135deg, #3a6073 0%, #16222a 100%);
+  --btn-secondary-grad: linear-gradient(135deg, #c94b4b 0%, #4b134f 100%);
+  --bg-gradient: linear-gradient(135deg, #eacda3 0%, #d6ae7b 100%);
   --card-bg: rgba(255, 255, 255, 0.95);
-  --text-color: #333;
+  --text-color: #2c3e50;
+  --teacher-color: #c0392b;
   --shadow-md: 0 8px 30px rgba(0,0,0,0.12);
 }
 
 /* 画面全体設定 */
 html, body {
-  margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; background: var(--bg-gradient); background-size: cover; color: var(--text-color); touch-action: none; -webkit-user-select: none; user-select: none; -webkit-font-smoothing: antialiased;
+  margin: 0; padding: 0; width: 100%; min-height: 100vh; min-height: -webkit-fill-available;
+  font-family: "Noto Serif JP", "Hiragino Mincho ProN", serif;
+  background: var(--bg-gradient); background-size: cover; background-attachment: fixed; 
+  color: var(--text-color); overflow-x: hidden; overflow-y: auto;
 }
-#root { width: 100%; height: 100%; }
-.container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 1rem; box-sizing: border-box; }
+#root { width: 100%; min-height: 100vh; }
+.container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 100vh; padding: 2rem 1rem; box-sizing: border-box; }
 
-/* タイトル修正：色を濃くして視認性を確保 */
+/* ミュートボタン */
+.mute-button {
+  position: fixed; top: 15px; right: 15px; width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8); border: 2px solid var(--gold-color); font-size: 1.2rem;
+  display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 1000; padding: 0;
+}
+.mute-button:active { transform: scale(0.9); }
+
+/* タイトル */
 h1 {
-  font-size: clamp(1.2rem, 5vw, 1.6rem);
-  font-weight: 900;
-  color: var(--primary-color); /* 白から青に変更 */
-  margin-bottom: 0.5rem;
-  text-shadow: none; /* 影も削除してシンプルに */
-  text-align: center;
-  pointer-events: none;
+  font-size: clamp(1.4rem, 5vw, 1.8rem); font-weight: 900; color: var(--primary-color); margin: 0 0 1.5rem 0; text-align: center;
+  text-shadow: 2px 2px 0px #fff, -2px -2px 0px #fff, -2px 2px 0px #fff, 2px -2px 0px #fff; flex-shrink: 0;
 }
-
-h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.2rem; }
+h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.1rem; }
 
 /* カード共通 */
 .start-screen, .game-screen, .result-screen, .roster-screen, .practice-screen {
-  background: var(--card-bg); padding: 1.2rem; border-radius: 20px; box-shadow: var(--shadow-md); width: 100%; max-width: 360px; max-height: 85vh; box-sizing: border-box; text-align: center; display: flex; flex-direction: column; position: relative; pointer-events: auto;
+  background: var(--card-bg); padding: 1.5rem; border-radius: 20px; box-shadow: var(--shadow-md); width: 100%; max-width: 350px; box-sizing: border-box; text-align: center; display: flex; flex-direction: column; position: relative; margin: 0 auto;
 }
-.fade-in { animation: fadeIn 0.3s ease-out; }
-@keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+.fade-in { animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* --- 名簿（座席表） --- */
-.roster-screen { max-width: 95%; width: 100%; overflow: hidden; }
+/* カウントダウンオーバーレイ */
+.countdown-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000;
+}
+.countdown-number {
+  font-size: 8rem; color: #fff; font-weight: 900; text-shadow: 0 0 20px rgba(255, 165, 0, 0.8); animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite;
+}
+@keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ゲームパーツ */
+.progress-bar-container { position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 20px 20px 0 0; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: #06C755; transition: width 0.3s; }
+.header-info { display: flex; justify-content: space-between; margin: 0.5rem 0 1rem 0; font-size: 0.85rem; font-weight: bold; color: #666; }
+.timer-badge { color: #e00; background: rgba(255,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+
+.student-number { font-size: clamp(4rem, 15vw, 5rem); margin: 0.5rem 0 1.5rem 0; color: var(--primary-color); font-weight: 900; line-height: 1; letter-spacing: -2px; }
+.teacher-mode-text { color: var(--teacher-color); font-size: clamp(3rem, 10vw, 4rem); letter-spacing: -1px; }
+
+.input-area { width: 100%; margin-bottom: 0.5rem; display: flex; justify-content: center; }
+.input-area input { 
+  width: 100%; padding: 0.8rem; font-size: 1.2rem; border: 2px solid #ddd; border-radius: 12px; text-align: center; background: #f9f9f9; font-weight: bold; box-sizing: border-box; transform: none; 
+}
+.input-area input:focus { outline: none; background: white; border-color: var(--primary-color); }
+.hint { font-size: 0.75rem; color: #999; margin-top: 0.5rem; }
+
+/* パスボタン */
+.pass-button {
+  background: #f0f0f0; border: 1px solid #ccc; color: #777; padding: 0.6rem; font-size: 0.9rem; margin-top: 0.5rem; box-shadow: none; border-radius: 10px; width: auto;
+}
+.pass-button:hover { background: #e0e0e0; }
+
+/* 名簿画面 */
+.roster-screen { max-width: 95%; max-height: 80vh; overflow: hidden; }
 .classroom-layout { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.blackboard-area { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 0.8rem; }
+.blackboard { background: #004d40; color: white; font-weight: bold; padding: 6px 12px; border-radius: 4px; border: 4px solid #8d6e63; letter-spacing: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); flex: 1; font-size: 0.8rem; }
+.teacher-desk { background: #fff0f5; border: 2px solid var(--teacher-color); border-radius: 8px; padding: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 70px; height: 50px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); }
+.teacher-label { font-size: 0.5rem; color: white; background: var(--teacher-color); padding: 1px 5px; border-radius: 10px; font-weight: bold; margin-bottom: 1px; }
+.teacher-name { font-size: 0.65rem; font-weight: bold; color: #333; line-height: 1.1;}
+.teacher-reading { font-size: 0.45rem; color: #777; white-space: nowrap; transform: scale(0.9);}
+.desks-grid { display: grid; grid-template-rows: repeat(6, 1fr); grid-auto-flow: column; gap: 4px; padding: 4px; overflow: auto; -webkit-overflow-scrolling: touch; direction: ltr; flex: 1; }
+.desk-item { background: #fff8e1; border: 1px solid #d7ccc8; border-radius: 6px; padding: 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 65px; height: 50px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.desk-id { font-size: 0.6rem; color: var(--primary-color); font-weight: bold; background: rgba(255,255,255,0.8); border-radius: 50%; width: 14px; height: 14px; line-height: 14px; margin-bottom: 1px; }
+.desk-name { font-size: 0.6rem; font-weight: bold; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.1; }
+.desk-reading { font-size: 0.45rem; color: #777; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; transform: scale(0.85); }
 
-/* 黒板エリア */
-.blackboard-area {
-  display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;
-}
-.blackboard {
-  background: #004d40; color: white; font-weight: bold; padding: 8px 20px; border-radius: 4px; border: 4px solid #8d6e63; letter-spacing: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); width: 80%;
-}
-
-/* 生徒の座席グリッド */
-.desks-grid {
-  display: grid; grid-template-rows: repeat(6, 1fr); grid-auto-flow: column; gap: 8px; padding: 4px; overflow: auto; -webkit-overflow-scrolling: touch; direction: ltr; flex: 1;
-}
-.desk-item {
-  background: #fff8e1; border: 1px solid #d7ccc8; border-radius: 6px; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 60px; height: 50px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-.desk-id {
-  font-size: 0.7rem; color: var(--primary-color); font-weight: bold; background: rgba(255,255,255,0.8); border-radius: 50%; width: 18px; height: 18px; line-height: 18px; margin-bottom: 2px;
-}
-.desk-name { font-size: 0.75rem; font-weight: bold; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-
-/* --- その他 --- */
-.section-group { margin-bottom: 0.8rem; border-bottom: 1px dashed #ddd; padding-bottom: 0.6rem; }
-.section-group h3 { margin: 0 0 0.4rem 0; font-size: 0.9rem; color: #555; }
-.button-row { display: flex; gap: 0.5rem; justify-content: center; }
-.sub-menu-row { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
-button { border: none; padding: 0.7rem 0; font-size: 0.9rem; font-weight: bold; border-radius: 10px; cursor: pointer; transition: all 0.2s; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); touch-action: manipulation; }
+/* その他UI */
+.section-group { margin-bottom: 1rem; border-bottom: 1px dashed #ddd; padding-bottom: 0.8rem; }
+.section-group h3 { margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #555; }
+.button-row { display: flex; gap: 0.6rem; justify-content: center; width: 100%; }
+.sub-menu-row { display: flex; gap: 0.6rem; justify-content: center; margin-top: 0.8rem; width: 100%; }
+button { border: none; padding: 0.8rem 0; font-size: 0.95rem; font-weight: bold; border-radius: 12px; cursor: pointer; transition: all 0.2s; width: 100%; box-shadow: 0 3px 6px rgba(0,0,0,0.1); font-family: inherit;}
 button:active { transform: scale(0.96); }
 .btn-primary { background: var(--primary-grad); color: white; }
 .btn-secondary { background: var(--secondary-grad); color: white; }
 .btn-outline { background: white; border: 1px solid #ccc; color: #555; }
-.btn-text { background: none; color: #888; box-shadow: none; text-decoration: underline; margin-top: auto; }
+.btn-text { background: none; color: #888; box-shadow: none; text-decoration: underline; margin-top: auto; padding: 0.5rem; }
 
 /* ランキング */
-.ranking-area { margin-top: 0.5rem; background: #f8f9fa; border-radius: 12px; padding: 0.5rem; flex: 1; display: flex; flex-direction: column; min-height: 120px; }
-.ranking-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
-.ranking-tabs button { padding: 4px; font-size: 0.7rem; background: #ddd; color: #666; box-shadow: none; border-radius: 6px; }
+.ranking-area { margin-top: 0.5rem; background: #f8f9fa; border-radius: 12px; padding: 0.8rem; flex: 1; display: flex; flex-direction: column; min-height: 120px; width: 100%; box-sizing: border-box;}
+.ranking-tabs { display: flex; gap: 4px; margin-bottom: 8px; justify-content: center;}
+.ranking-tabs button { padding: 4px; font-size: 0.7rem; background: #ddd; color: #666; box-shadow: none; border-radius: 6px; width: auto; flex: 1;}
 .ranking-tabs button.active { background: var(--primary-color); color: white; }
 .ranking-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
-.ranking-list li { display: flex; justify-content: space-between; padding: 4px 8px; border-bottom: 1px dashed #ddd; font-size: 0.8rem; }
+.ranking-list li { display: flex; justify-content: space-between; padding: 6px 8px; border-bottom: 1px dashed #ddd; font-size: 0.8rem; }
 .ranking-list li.rank-1 { color: #f5a623; font-weight: bold; }
 .rank-num { width: 20px; text-align: left; }
 .rank-time { font-family: monospace; font-weight: bold; }
 .rank-date { font-size: 0.7rem; color: #999; }
 .no-data { font-size: 0.8rem; color: #999; padding: 10px; }
+.reset-rank-btn { background: none; border: 1px solid #ccc; color: #999; padding: 4px; font-size: 0.7rem; margin-top: 8px; box-shadow: none; width: auto; align-self: center; border-radius: 4px; }
 
 /* 練習設定 */
 .practice-option { margin-bottom: 1rem; text-align: left; }
@@ -92,26 +124,28 @@ button:active { transform: scale(0.96); }
 .toggle-row button { background: #eee; color: #888; box-shadow: none; }
 .toggle-row button.active { background: var(--primary-color); color: white; }
 .range-inputs { display: flex; align-items: center; justify-content: center; gap: 10px; }
-.range-inputs input { width: 60px; padding: 8px; font-size: 1.2rem; text-align: center; border: 1px solid #ccc; border-radius: 8px; }
-.select-list { height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 8px; text-align: left; border-radius: 8px; }
-.checkbox-item { display: block; padding: 4px 0; cursor: pointer; }
+.range-inputs input { width: 60px; padding: 8px; font-size: 1.2rem; text-align: center; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+.select-list { height: 180px; overflow-y: auto; border: 1px solid #eee; padding: 8px; text-align: left; border-radius: 8px; }
+.checkbox-item { display: block; padding: 5px 0; cursor: pointer; }
 .checkbox-item input { margin-right: 8px; transform: scale(1.2); }
 
-/* ゲーム画面 */
-.progress-bar-container { position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 20px 20px 0 0; overflow: hidden; }
-.progress-bar-fill { height: 100%; background: #06C755; transition: width 0.3s; }
-.header-info { display: flex; justify-content: space-between; margin: 1rem 0; font-size: 0.9rem; font-weight: bold; color: #666; }
-.timer-badge { color: #e00; background: rgba(255,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
-.student-number { font-size: clamp(4rem, 12vw, 5rem); margin: 0.5rem 0 1.5rem 0; color: var(--primary-color); font-weight: 900; line-height: 1; }
+/* 結果 */
+.time-display { font-size: 2.8rem; font-weight: 900; color: var(--primary-color); margin: 0.5rem 0; }
+.share-buttons { display: flex; gap: 0.8rem; justify-content: center; margin: 1rem 0; width: 100%; }
+.btn-line { background: #06C755; color: white; width: auto; padding: 0.7rem 1.5rem; flex: 1; }
+.btn-x { background: #000; color: white; width: auto; padding: 0.7rem 1.5rem; flex: 1; }
+.retry-buttons { margin-top: auto; width: 100%; }
 
-.input-area input { width: 100%; padding: 0.8rem; font-size: 1.2rem; border: 2px solid transparent; border-radius: 12px; text-align: center; background: #f0f2f5; font-weight: bold; transform: scale(1); }
-.input-area input:focus { outline: none; background: white; border-color: var(--primary-color); }
+/* 苦手リスト */
+.weakness-box { margin: 1rem 0; text-align: left; width: 100%; background: #fff0f0; border-radius: 8px; padding: 0.8rem; box-sizing: border-box; border: 1px solid #ffcccc; }
+.weakness-box h3 { margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #d63031; border-bottom: 1px dashed #e17055; padding-bottom: 4px; }
+.weakness-box ul { list-style: none; padding: 0; margin: 0; }
+.weakness-box li { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 3px 0; border-bottom: 1px solid #ffecec; }
+.weakness-name { font-weight: bold; }
+.weakness-time { font-family: monospace; color: #555; }
+.pass-tag { background: #777; color: white; padding: 1px 4px; border-radius: 3px; font-size: 0.7rem; }
+
+/* 揺れ */
 .shake { animation: shake 0.4s both; }
 .input-error { border-color: #ff6b6b !important; background: #fff0f0 !important; color: #e00; }
 @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 30%, 70% { transform: translate3d(-4px, 0, 0); } 50% { transform: translate3d(4px, 0, 0); } }
-
-/* 結果 */
-.time-display { font-size: 2.5rem; font-weight: 900; color: var(--primary-color); margin: 0.5rem 0; }
-.share-buttons { display: flex; gap: 0.5rem; justify-content: center; margin: 1rem 0;}
-.btn-line { background: #06C755; color: white; width: auto; padding: 0.7rem 1.5rem; }
-.btn-x { background: #000; color: white; width: auto; padding: 0.7rem 1.5rem; }
