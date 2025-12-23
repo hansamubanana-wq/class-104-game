@@ -68,7 +68,7 @@ function App() {
     
     if(targets.length === 0) return alert("生徒を選んでください");
     
-    setTargetCount(targets.length); // 練習モードの人数もセット
+    setTargetCount(targets.length); // 練習時はその人数が目標
     setIsPractice(true);
     setupGame(targets, mode, isRandomOrder);
   }
@@ -95,7 +95,8 @@ function App() {
   };
 
   const nextQuestion = (newCompletedIds) => {
-    // 【修正】 リスト全体の長さではなく、目標人数(targetCount)に達したら終了
+    // 【修正】ここがバグの原因でした。
+    // 問題リストの数(37)ではなく、目標人数(10)に達したら終了させます。
     if (newCompletedIds.length >= targetCount) {
       finishGame();
       return;
@@ -174,17 +175,15 @@ function App() {
       .slice(0, 5);
   };
 
-  // 先生判定 (ID 37)
   const isTeacher = (id) => id === 37;
 
   return (
     <div className="container">
-      {/* タイトルをここ（共通エリア）に戻しました */}
+      {/* タイトルを固定配置（ズレ防止） */}
       <h1>104 名前当て</h1>
 
       {screen === 'start' && (
         <div className="start-screen fade-in">
-          
           <div className="menu-buttons">
             <div className="section-group">
               <h3>⚡️ サクッと (10問)</h3>
@@ -236,7 +235,6 @@ function App() {
           <div className="classroom-layout">
             <div className="blackboard-area">
               <div className="blackboard">黒 板</div>
-              {/* 先生席 (ID 37) */}
               {students.find(s => s.id === 37) && (
                 <div className="teacher-desk">
                   <span className="teacher-label">Teacher</span>
@@ -247,7 +245,6 @@ function App() {
             </div>
             
             <div className="desks-grid">
-              {/* 生徒のみ表示 (ID 37以外) */}
               {students.filter(s => s.id !== 37).map(s => (
                 <div key={s.id} className="desk-item">
                   <span className="desk-id">{s.id}</span>
@@ -327,7 +324,6 @@ function App() {
           </div>
           
           <div className="question-card">
-            {/* 先生ならTeacher表示 */}
             <h2 className={isTeacher(currentStudent.id) ? "student-number teacher-mode-text" : "student-number"}>
               {isTeacher(currentStudent.id) ? "Teacher" : `${currentStudent.id}番`}
             </h2>

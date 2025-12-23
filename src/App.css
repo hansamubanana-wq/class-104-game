@@ -12,18 +12,15 @@
 
 /* 画面全体設定 */
 html, body {
-  margin: 0; 
-  padding: 0; 
-  width: 100%; 
-  height: 100%; 
-  /* 画面全体のバウンス（びよーん）は防ぐ */
-  overflow: hidden; 
+  margin: 0; padding: 0; 
+  width: 100%; height: 100%; 
+  overflow: hidden; /* 外側は固定 */
   position: fixed; 
   font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; 
   background: var(--bg-gradient); 
   background-size: cover; 
   color: var(--text-color); 
-  touch-action: pan-y; /* 縦スクロールのみ許可 */
+  touch-action: none; 
   -webkit-user-select: none; 
   user-select: none; 
   -webkit-font-smoothing: antialiased;
@@ -31,43 +28,43 @@ html, body {
 
 #root { width: 100%; height: 100%; }
 
-/* コンテナ：ここをスクロール可能にするのがポイント */
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center; /* 基本は中央寄せ */
-  width: 100%;
-  height: 100%;
-  padding: 1rem;
-  box-sizing: border-box;
-  overflow-y: auto; /* 中身があふれたらここだけスクロール */
+.container { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  width: 100%; 
+  height: 100dvh; /* dvhで高さを確保 */
+  padding: 1rem; 
+  box-sizing: border-box; 
+  
+  /* ★修正ポイント：中身があふれたらここだけスクロールさせる */
+  overflow-y: auto; 
   -webkit-overflow-scrolling: touch;
 }
 
 /* コンテナの中身が少ないときも中央に配置するためのハック */
 .container::before, .container::after {
   content: '';
-  flex: 0 0 auto; /* 伸び縮みしない余白 */
-  height: 1rem;   /* 最低限の余白 */
+  flex: 0 0 auto; 
+  height: 1rem; 
 }
 .container::before { margin-top: auto; }
 .container::after { margin-bottom: auto; }
 
-
 /* タイトル */
-h1 {
-  font-size: clamp(1.2rem, 5vw, 1.5rem);
-  font-weight: 900;
-  color: var(--primary-color);
-  margin: 0 0 1rem 0;
-  text-align: center;
+h1 { 
+  font-size: clamp(1.2rem, 5vw, 1.6rem); 
+  font-weight: 900; 
+  color: white; 
+  margin: 0 0 0.8rem 0; 
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2); 
+  text-align: center; 
   pointer-events: none;
-  text-shadow: 2px 2px 0px #fff, -2px -2px 0px #fff, -2px 2px 0px #fff, 2px -2px 0px #fff;
-  flex-shrink: 0; /* タイトルも縮ませない */
+  flex-shrink: 0; /* タイトルを潰さない */
 }
 
-h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.1rem; }
+h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.2rem; }
 
 /* カード共通 */
 .start-screen, .game-screen, .result-screen, .roster-screen, .practice-screen {
@@ -76,94 +73,45 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.1rem; }
   border-radius: 20px; 
   box-shadow: var(--shadow-md); 
   width: 100%; 
-  max-width: 340px; 
+  max-width: 360px; 
+  /* max-height: 85vh; ← これが原因だったので削除 */
   box-sizing: border-box; 
   text-align: center; 
   display: flex; 
   flex-direction: column; 
   position: relative; 
   pointer-events: auto; 
-  
-  /* ★ここが修正のキモ：カードが勝手に縮まないようにする */
-  flex-shrink: 0; 
-  margin: 0 auto; /* 左右中央 */
+  margin: 0 auto;
+  flex-shrink: 0; /* カードを勝手に縮ませない */
 }
 
 .fade-in { animation: fadeIn 0.3s ease-out; }
 @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
-/* --- ゲーム画面のパーツ --- */
-.progress-bar-container { position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 20px 20px 0 0; overflow: hidden; }
-.progress-bar-fill { height: 100%; background: #06C755; transition: width 0.3s; }
-
-.header-info { 
-  display: flex; 
-  justify-content: space-between; 
-  margin: 0.5rem 0 0.5rem 0; 
-  font-size: 0.8rem; 
-  font-weight: bold; 
-  color: #666; 
-}
-.timer-badge { color: #e00; background: rgba(255,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
-
-/* 問題表示 */
-.student-number { 
-  font-size: clamp(3.5rem, 12vw, 4.5rem); 
-  margin: 0.2rem 0 1rem 0; 
-  color: var(--primary-color); 
-  font-weight: 900; 
-  line-height: 1; 
-  letter-spacing: -2px; 
-}
-.teacher-mode-text { color: var(--teacher-color); font-size: clamp(2.5rem, 9vw, 3.5rem); letter-spacing: -1px; }
-
-.input-area { width: 100%; margin-bottom: 0.5rem; }
-.input-area input { 
-  width: 100%; 
-  padding: 0.7rem; 
-  font-size: 1.1rem; 
-  border: 2px solid transparent; 
-  border-radius: 12px; 
-  text-align: center; 
-  background: #f0f2f5; 
-  font-weight: bold; 
-  transform: scale(1); 
-}
-.input-area input:focus { outline: none; background: white; border-color: var(--primary-color); }
-
-/* ヒント */
-.hint { font-size: 0.7rem; color: #999; margin-top: 0.2rem; }
-
 /* --- 名簿（座席表） --- */
-.roster-screen { max-width: 95%; width: 100%; overflow: hidden; max-height: 80vh; /* 名簿は例外的に高さ制限あり（中身スクロールのため） */ }
+.roster-screen { max-width: 95%; width: 100%; overflow: hidden; max-height: 80vh; /* 名簿だけは例外的に高さ制限あり */ }
 .classroom-layout { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-.blackboard-area { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 0.5rem; }
-.blackboard { background: #004d40; color: white; font-weight: bold; padding: 6px 12px; border-radius: 4px; border: 4px solid #8d6e63; letter-spacing: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); flex: 1; font-size: 0.8rem; }
+.blackboard-area { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem; }
+.blackboard { background: #004d40; color: white; font-weight: bold; padding: 8px 20px; border-radius: 4px; border: 4px solid #8d6e63; letter-spacing: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); flex: 1; }
 
-.teacher-desk {
-  background: #fff0f5; border: 2px solid var(--teacher-color); border-radius: 8px; padding: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 70px; height: 50px; box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-}
-.teacher-label { font-size: 0.5rem; color: white; background: var(--teacher-color); padding: 1px 5px; border-radius: 10px; font-weight: bold; margin-bottom: 1px; }
-.teacher-name { font-size: 0.65rem; font-weight: bold; color: #333; line-height: 1.1;}
-.teacher-reading { font-size: 0.45rem; color: #777; white-space: nowrap; transform: scale(0.9);}
+.teacher-desk { background: #fff0f5; border: 2px solid var(--teacher-color); border-radius: 8px; padding: 4px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 80px; height: 60px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); }
+.teacher-label { font-size: 0.6rem; color: white; background: var(--teacher-color); padding: 1px 6px; border-radius: 10px; font-weight: bold; margin-bottom: 2px; }
+.teacher-name { font-size: 0.75rem; font-weight: bold; color: #333; line-height: 1.2;}
+.teacher-reading { font-size: 0.5rem; color: #777; white-space: nowrap; transform: scale(0.9);}
 
-.desks-grid {
-  display: grid; grid-template-rows: repeat(6, 1fr); grid-auto-flow: column; gap: 4px; padding: 4px; overflow: auto; -webkit-overflow-scrolling: touch; direction: ltr; flex: 1;
-}
-.desk-item {
-  background: #fff8e1; border: 1px solid #d7ccc8; border-radius: 6px; padding: 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 65px; height: 50px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-.desk-id { font-size: 0.6rem; color: var(--primary-color); font-weight: bold; background: rgba(255,255,255,0.8); border-radius: 50%; width: 14px; height: 14px; line-height: 14px; margin-bottom: 1px; }
-.desk-name { font-size: 0.6rem; font-weight: bold; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.1; }
-.desk-reading { font-size: 0.45rem; color: #777; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; transform: scale(0.85); }
+.desks-grid { display: grid; grid-template-rows: repeat(6, 1fr); grid-auto-flow: column; gap: 6px; padding: 4px; overflow: auto; -webkit-overflow-scrolling: touch; direction: ltr; flex: 1; }
+.desk-item { background: #fff8e1; border: 1px solid #d7ccc8; border-radius: 6px; padding: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 70px; height: 60px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.desk-id { font-size: 0.65rem; color: var(--primary-color); font-weight: bold; background: rgba(255,255,255,0.8); border-radius: 50%; width: 16px; height: 16px; line-height: 16px; margin-bottom: 2px; }
+.desk-name { font-size: 0.65rem; font-weight: bold; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.2; }
+.desk-reading { font-size: 0.5rem; color: #777; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; transform: scale(0.9); }
 
 /* --- その他 --- */
-.section-group { margin-bottom: 0.6rem; border-bottom: 1px dashed #ddd; padding-bottom: 0.5rem; }
-.section-group h3 { margin: 0 0 0.3rem 0; font-size: 0.85rem; color: #555; }
+.section-group { margin-bottom: 0.8rem; border-bottom: 1px dashed #ddd; padding-bottom: 0.6rem; }
+.section-group h3 { margin: 0 0 0.4rem 0; font-size: 0.9rem; color: #555; }
 .button-row { display: flex; gap: 0.5rem; justify-content: center; }
 .sub-menu-row { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
-button { border: none; padding: 0.6rem 0; font-size: 0.85rem; font-weight: bold; border-radius: 10px; cursor: pointer; transition: all 0.2s; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); touch-action: manipulation; }
+button { border: none; padding: 0.7rem 0; font-size: 0.9rem; font-weight: bold; border-radius: 10px; cursor: pointer; transition: all 0.2s; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); touch-action: manipulation; }
 button:active { transform: scale(0.96); }
 .btn-primary { background: var(--primary-grad); color: white; }
 .btn-secondary { background: var(--secondary-grad); color: white; }
@@ -171,38 +119,46 @@ button:active { transform: scale(0.96); }
 .btn-text { background: none; color: #888; box-shadow: none; text-decoration: underline; margin-top: auto; }
 
 /* ランキング */
-.ranking-area { margin-top: 0.5rem; background: #f8f9fa; border-radius: 12px; padding: 0.5rem; flex: 1; display: flex; flex-direction: column; min-height: 100px; }
+.ranking-area { margin-top: 0.5rem; background: #f8f9fa; border-radius: 12px; padding: 0.5rem; flex: 1; display: flex; flex-direction: column; min-height: 120px; }
 .ranking-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
-.ranking-tabs button { padding: 4px; font-size: 0.65rem; background: #ddd; color: #666; box-shadow: none; border-radius: 6px; }
+.ranking-tabs button { padding: 4px; font-size: 0.7rem; background: #ddd; color: #666; box-shadow: none; border-radius: 6px; }
 .ranking-tabs button.active { background: var(--primary-color); color: white; }
 .ranking-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
-.ranking-list li { display: flex; justify-content: space-between; padding: 4px 8px; border-bottom: 1px dashed #ddd; font-size: 0.75rem; }
+.ranking-list li { display: flex; justify-content: space-between; padding: 4px 8px; border-bottom: 1px dashed #ddd; font-size: 0.8rem; }
 .ranking-list li.rank-1 { color: #f5a623; font-weight: bold; }
-.rank-num { width: 16px; text-align: left; }
+.rank-num { width: 20px; text-align: left; }
 .rank-time { font-family: monospace; font-weight: bold; }
-.rank-date { font-size: 0.65rem; color: #999; }
-.no-data { font-size: 0.75rem; color: #999; padding: 10px; }
+.rank-date { font-size: 0.7rem; color: #999; }
+.no-data { font-size: 0.8rem; color: #999; padding: 10px; }
 
 /* 練習設定 */
-.practice-option { margin-bottom: 0.8rem; text-align: left; }
-.practice-option label { font-size: 0.85rem; font-weight: bold; color: #555; display: block; margin-bottom: 0.2rem;}
+.practice-option { margin-bottom: 1rem; text-align: left; }
+.practice-option label { font-size: 0.9rem; font-weight: bold; color: #555; display: block; margin-bottom: 0.3rem;}
 .toggle-row { display: flex; gap: 0.5rem; }
 .toggle-row button { background: #eee; color: #888; box-shadow: none; }
 .toggle-row button.active { background: var(--primary-color); color: white; }
 .range-inputs { display: flex; align-items: center; justify-content: center; gap: 10px; }
-.range-inputs input { width: 50px; padding: 6px; font-size: 1.1rem; text-align: center; border: 1px solid #ccc; border-radius: 8px; }
-.select-list { height: 120px; overflow-y: auto; border: 1px solid #eee; padding: 6px; text-align: left; border-radius: 8px; }
-.checkbox-item { display: block; padding: 3px 0; cursor: pointer; font-size: 0.85rem;}
-.checkbox-item input { margin-right: 8px; transform: scale(1.1); }
+.range-inputs input { width: 60px; padding: 8px; font-size: 1.2rem; text-align: center; border: 1px solid #ccc; border-radius: 8px; }
+.select-list { height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 8px; text-align: left; border-radius: 8px; }
+.checkbox-item { display: block; padding: 4px 0; cursor: pointer; }
+.checkbox-item input { margin-right: 8px; transform: scale(1.2); }
 
-/* 結果 */
-.time-display { font-size: 2.5rem; font-weight: 900; color: var(--primary-color); margin: 0.5rem 0; }
-.share-buttons { display: flex; gap: 0.5rem; justify-content: center; margin: 0.8rem 0;}
-.btn-line { background: #06C755; color: white; width: auto; padding: 0.6rem 1.2rem; }
-.btn-x { background: #000; color: white; width: auto; padding: 0.6rem 1.2rem; }
-.retry-buttons { margin-top: auto; }
+/* ゲーム画面 */
+.progress-bar-container { position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 20px 20px 0 0; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: #06C755; transition: width 0.3s; }
+.header-info { display: flex; justify-content: space-between; margin: 1rem 0; font-size: 0.9rem; font-weight: bold; color: #666; }
+.timer-badge { color: #e00; background: rgba(255,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+.student-number { font-size: clamp(4rem, 12vw, 5rem); margin: 0.5rem 0 1.5rem 0; color: var(--primary-color); font-weight: 900; line-height: 1; }
+.teacher-mode-text { color: var(--teacher-color); font-size: clamp(3rem, 10vw, 4rem); letter-spacing: -1px; }
 
-/* 揺れアニメーション */
+.input-area input { width: 100%; padding: 0.8rem; font-size: 1.2rem; border: 2px solid transparent; border-radius: 12px; text-align: center; background: #f0f2f5; font-weight: bold; transform: scale(1); }
+.input-area input:focus { outline: none; background: white; border-color: var(--primary-color); }
 .shake { animation: shake 0.4s both; }
 .input-error { border-color: #ff6b6b !important; background: #fff0f0 !important; color: #e00; }
 @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 30%, 70% { transform: translate3d(-4px, 0, 0); } 50% { transform: translate3d(4px, 0, 0); } }
+
+/* 結果 */
+.time-display { font-size: 2.5rem; font-weight: 900; color: var(--primary-color); margin: 0.5rem 0; }
+.share-buttons { display: flex; gap: 0.5rem; justify-content: center; margin: 1rem 0;}
+.btn-line { background: #06C755; color: white; width: auto; padding: 0.7rem 1.5rem; }
+.btn-x { background: #000; color: white; width: auto; padding: 0.7rem 1.5rem; }
