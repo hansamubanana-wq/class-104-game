@@ -4,7 +4,6 @@ import './App.css';
 import { students } from './students';
 import { playSound } from './SoundManager';
 
-// カタカナをひらがなに変換するヘルパー関数
 const toHiragana = (str) => {
   return str.replace(/[\u30a1-\u30f6]/g, function(match) {
     var chr = match.charCodeAt(0) - 0x60;
@@ -23,8 +22,8 @@ function App() {
   const [isPractice, setIsPractice] = useState(false);
   
   // カウントダウン用
-  const [countdown, setCountdown] = useState(null); // null = なし, 3,2,1,0
-  const [pendingGameSettings, setPendingGameSettings] = useState(null); // カウントダウン後に開始する設定
+  const [countdown, setCountdown] = useState(null); 
+  const [pendingGameSettings, setPendingGameSettings] = useState(null);
 
   // ゲームプレイ用
   const [questionList, setQuestionList] = useState([]);
@@ -36,10 +35,9 @@ function App() {
   const [isShake, setIsShake] = useState(false);
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState("0.00");
   
-  // 新機能用ステート
-  const [penaltyTime, setPenaltyTime] = useState(0); // ペナルティ秒数
-  const [questionStartTime, setQuestionStartTime] = useState(0); // 1問ごとの開始時間
-  const [questionStats, setQuestionStats] = useState([]); // 苦手分析用ログ
+  const [penaltyTime, setPenaltyTime] = useState(0); 
+  const [questionStartTime, setQuestionStartTime] = useState(0); 
+  const [questionStats, setQuestionStats] = useState([]); 
 
   // ランキング (v3)
   const [ranking, setRanking] = useState(() => {
@@ -55,13 +53,12 @@ function App() {
 
   const inputRef = useRef(null);
 
-  // タイマー（ペナルティ考慮）
+  // タイマー
   useEffect(() => {
     let interval;
     if (screen === 'game' && startTime && !endTime && countdown === null) {
       interval = setInterval(() => {
         const now = Date.now();
-        // 経過時間 + ペナルティ
         const diff = (now - startTime) / 1000 + penaltyTime;
         setCurrentTimeDisplay(diff.toFixed(2));
       }, 50);
@@ -75,11 +72,10 @@ function App() {
     if (countdown !== null && countdown > 0) {
       timer = setTimeout(() => {
         setCountdown(countdown - 1);
-        if (countdown - 1 > 0) playSoundSafe('dummy'); // ピッ
-      }, 1000);
+        if (countdown - 1 > 0) playSoundSafe('dummy'); 
+      }, 1000); // 1秒ごとに更新
     } else if (countdown === 0) {
-      // カウントダウン終了、ゲーム開始
-      playSoundSafe('dummy'); // ポーン
+      playSoundSafe('dummy'); 
       setCountdown(null);
       startRealGame();
     }
@@ -90,9 +86,8 @@ function App() {
     if (!isMuted) playSound(type);
   };
 
-  // --- ゲーム開始フロー ---
+  // --- ゲーム開始 ---
   
-  // 1. 設定を受け取ってカウントダウンを開始
   const startNormalGame = (mode, count) => {
     setPendingGameSettings({ targetStudents: students, mode, count, random: true, practice: false });
     startCountdown();
@@ -115,10 +110,8 @@ function App() {
     playSoundSafe('dummy');
   };
 
-  // 2. カウントダウン後に呼ばれる実処理
   const startRealGame = () => {
     const { targetStudents, mode, count, random, practice } = pendingGameSettings;
-    
     setGameMode(mode);
     setTargetCount(count);
     setIsRandomOrder(random);
@@ -136,13 +129,13 @@ function App() {
     setEndTime(null);
     setInputVal('');
     setCurrentTimeDisplay("0.00");
-    setPenaltyTime(0); // ペナルティリセット
-    setQuestionStats([]); // ログリセット
+    setPenaltyTime(0); 
+    setQuestionStats([]); 
     setScreen('game');
     
     const now = Date.now();
     setStartTime(now);
-    setQuestionStartTime(now); // 1問目の計測開始
+    setQuestionStartTime(now); 
     setCurrentStudent(list[0]);
   };
 
@@ -153,22 +146,16 @@ function App() {
     }
     const nextIndex = newCompletedIds.length;
     setCurrentStudent(questionList[nextIndex]);
-    setQuestionStartTime(Date.now()); // 次の問題の計測開始
+    setQuestionStartTime(Date.now()); 
   };
 
-  // パス機能
   const handlePass = () => {
     if (!currentStudent) return;
-    
-    playSoundSafe('dummy'); // パス音（仮）
-    
-    // 記録（パスはタイム最大扱いやペナルティとして記録してもいいが、ここでは時間を記録）
+    playSoundSafe('dummy'); 
     const timeTaken = (Date.now() - questionStartTime) / 1000;
-    setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken + 5, isPass: true }]); // パスしたことも記録
-
-    setPenaltyTime(prev => prev + 5); // ペナルティ加算
-    
-    const newCompletedIds = [...completedIds, currentStudent.id]; // 完了扱いにして次へ
+    setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken + 5, isPass: true }]); 
+    setPenaltyTime(prev => prev + 5); 
+    const newCompletedIds = [...completedIds, currentStudent.id]; 
     setCompletedIds(newCompletedIds);
     setInputVal('');
     nextQuestion(newCompletedIds);
@@ -182,7 +169,6 @@ function App() {
     playSoundSafe('clear');
     triggerConfetti();
 
-    // 最終タイム（ペナルティ込み）
     const finalTime = (end - startTime) / 1000 + penaltyTime;
     setCurrentTimeDisplay(finalTime.toFixed(2));
 
@@ -207,23 +193,18 @@ function App() {
     if (!currentStudent) return;
 
     const targetRaw = gameMode === 'reading' ? currentStudent.reading : currentStudent.name;
-    // ★新機能：入力をひらがなに変換してから比較
     const cleanVal = toHiragana(val).replace(/\s+/g, ''); 
     const cleanTarget = targetRaw.replace(/\s+/g, '');
 
     if (cleanVal === cleanTarget) {
       playSoundSafe('correct');
-      
-      // ログ記録
       const timeTaken = (Date.now() - questionStartTime) / 1000;
       setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken, isPass: false }]);
-
       const newCompletedIds = [...completedIds, currentStudent.id];
       setCompletedIds(newCompletedIds);
       setInputVal('');
       nextQuestion(newCompletedIds);
     } else {
-      // 入力途中判定もひらがな変換後で行う
       if (!cleanTarget.startsWith(cleanVal) && cleanVal.length > 0) {
         setIsShake(true);
       }
@@ -253,12 +234,8 @@ function App() {
       .slice(0, 5);
   };
 
-  // 苦手リスト取得（時間がかかった上位3名）
   const getWeaknessList = () => {
-    // 時間順に降順ソート
-    return [...questionStats]
-      .sort((a, b) => b.time - a.time)
-      .slice(0, 3);
+    return [...questionStats].sort((a, b) => b.time - a.time).slice(0, 3);
   };
 
   const resetRanking = () => {
@@ -273,11 +250,7 @@ function App() {
 
   return (
     <div className="container">
-      <button 
-        className="mute-button" 
-        onClick={() => setIsMuted(!isMuted)}
-        title={isMuted ? "音声をオンにする" : "音声をオフにする"}
-      >
+      <button className="mute-button" onClick={() => setIsMuted(!isMuted)}>
         {isMuted ? "🔇" : "🔊"}
       </button>
 
@@ -335,10 +308,10 @@ function App() {
         </div>
       )}
 
-      {/* カウントダウン画面 */}
+      {/* ★修正：key={countdown} を追加してアニメーションを毎回リセット */ }
       {screen === 'countdown' && (
         <div className="countdown-overlay fade-in">
-          <div className="countdown-number">
+          <div className="countdown-number" key={countdown}>
             {countdown > 0 ? countdown : "GO!"}
           </div>
         </div>
@@ -450,7 +423,6 @@ function App() {
               className={isShake ? 'input-error' : ''}
             />
           </div>
-          {/* パスボタン */}
           <button onClick={handlePass} className="pass-button">パス (+5秒)</button>
           
           {isPractice && !isRandomOrder && !isTeacher(currentStudent.id) && <p className="hint">次は {currentStudent.id + 1}番です</p>}
@@ -468,7 +440,6 @@ function App() {
             {isPractice && <p style={{fontSize:'0.8rem', color:'#999', marginTop:'5px'}}>※練習モードのため記録は保存されません</p>}
           </div>
 
-          {/* 苦手リスト表示 */}
           {getWeaknessList().length > 0 && (
             <div className="weakness-box">
               <h3>🐢 時間がかかった人</h3>
