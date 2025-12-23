@@ -35,5 +35,5 @@ export const students = [
   { id: 34, name: "百瀬 香歩", reading: "ももせかほ" },
   { id: 35, name: "山崎 唯翔", reading: "やまさきゆいと" },
   { id: 36, name: "吉田 壮汰", reading: "よしだそうた" },
-  { id: 37, name: "吉田 智香先生", reading: "よしだともかせんせい" },
+  { id: 37, name: "吉田 智香", reading: "よしだともか" },
 ];
