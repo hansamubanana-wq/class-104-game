@@ -4,83 +4,120 @@ import { students } from './students';
 
 function App() {
   // ゲームの状態管理
-  const [currentStudent, setCurrentStudent] = useState(null); // 現在の問題
-  const [inputVal, setInputVal] = useState(''); // 入力された文字
-  const [completedIds, setCompletedIds] = useState([]); // 正解済みのIDリスト
-  const [startTime, setStartTime] = useState(null); // 開始時間
-  const [endTime, setEndTime] = useState(null); // 終了時間
-  const [isGameStarted, setIsGameStarted] = useState(false); // ゲーム中かどうか
+  const [gameMode, setGameMode] = useState('reading'); // 'reading'(ひらがな) or 'name'(漢字)
+  const [currentStudent, setCurrentStudent] = useState(null);
+  const [inputVal, setInputVal] = useState('');
+  const [completedIds, setCompletedIds] = useState([]);
+  const [startTime, setStartTime] = useState(null);
+  const [endTime, setEndTime] = useState(null);
+  const [isGameStarted, setIsGameStarted] = useState(false);
   
-  // 入力欄に自動でカーソルを合わせるための設定
+  // 自己ベスト（ローカルストレージから読み込み）
+  const [bestTime, setBestTime] = useState(() => {
+    const saved = localStorage.getItem('class104_best_time');
+    return saved ? parseFloat(saved) : null;
+  });
+
   const inputRef = useRef(null);
 
   // ゲーム開始処理
-  const startGame = () => {
+  const startGame = (mode) => {
+    setGameMode(mode);
     setCompletedIds([]);
     setEndTime(null);
     setInputVal('');
     setIsGameStarted(true);
     setStartTime(Date.now());
-    pickNextStudent([]);
+    pickNextStudent([], mode);
   };
 
-  // 次の問題を選ぶ処理
+  // 次の問題を選ぶ
   const pickNextStudent = (doneIds) => {
-    // まだ正解していない生徒のIDリストを作成
     const remainingStudents = students.filter(s => !doneIds.includes(s.id));
     
     if (remainingStudents.length === 0) {
-      // 全員終わったら終了
-      setEndTime(Date.now());
-      setCurrentStudent(null);
+      finishGame();
       return;
     }
 
-    // ランダムに1人選ぶ
     const randomIndex = Math.floor(Math.random() * remainingStudents.length);
     setCurrentStudent(remainingStudents[randomIndex]);
   };
 
-  // 文字が入力されるたびに実行される処理
+  // ゲーム終了処理
+  const finishGame = () => {
+    const end = Date.now();
+    setEndTime(end);
+    setCurrentStudent(null);
+
+    // タイム計算と自己ベスト更新
+    const currentTime = (end - startTime) / 1000;
+    if (!bestTime || currentTime < bestTime) {
+      setBestTime(currentTime);
+      localStorage.setItem('class104_best_time', currentTime);
+    }
+  };
+
+  // 文字入力判定
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInputVal(val);
 
     if (!currentStudent) return;
 
-    // 正誤判定（ひらがなで一致するか）
-    if (val === currentStudent.reading) {
-      // 正解の場合
+    // ターゲットの文字列を取得（モードによって切り替え）
+    const targetRaw = gameMode === 'reading' ? currentStudent.reading : currentStudent.name;
+    
+    // 空白を削除して比較（漢字モードでの入力ミス軽減のため）
+    const cleanVal = val.replace(/\s+/g, '');
+    const cleanTarget = targetRaw.replace(/\s+/g, '');
+
+    if (cleanVal === cleanTarget) {
       const newCompletedIds = [...completedIds, currentStudent.id];
       setCompletedIds(newCompletedIds);
-      setInputVal(''); // 入力欄を空にする
-      pickNextStudent(newCompletedIds); // 次の問題へ
+      setInputVal('');
+      pickNextStudent(newCompletedIds);
     }
   };
 
-  // エンターキーでリトライなどを操作する場合用
+  // 結果画面でのエンターキー操作
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && endTime) {
-      startGame();
+      startGame(gameMode);
     }
   };
 
-  // 画面描画
+  // タイムのフォーマット
+  const formatTime = (time) => time ? time.toFixed(2) : '-.--';
+
   return (
     <div className="container">
       <h1>104 名前当てタイムアタック</h1>
       
       {!isGameStarted && !endTime && (
         <div className="start-screen">
-          <p>出席番号順の37人全員の名前を答えろ！</p>
-          <button onClick={startGame} className="btn-primary">スタート</button>
+          <p>モードを選んでスタート！</p>
+          
+          <div className="mode-select">
+            <button onClick={() => startGame('reading')} className="btn-primary">
+              ひらがな (Easy)
+            </button>
+            <button onClick={() => startGame('name')} className="btn-secondary">
+              漢字 (Hard)
+            </button>
+          </div>
+
+          {bestTime && (
+            <p className="best-score">👑 自己ベスト: {formatTime(bestTime)} 秒</p>
+          )}
         </div>
       )}
 
       {isGameStarted && !endTime && currentStudent && (
         <div className="game-screen">
-          <div className="progress">
-            残り: {37 - completedIds.length} 人
+          <div className="header-info">
+             <span className="progress">残り: {37 - completedIds.length} 人</span>
+             <span className="mode-badge">{gameMode === 'reading' ? 'ひらがな' : '漢字'}</span>
           </div>
           
           <div className="question-card">
@@ -93,21 +130,35 @@ function App() {
               type="text"
               value={inputVal}
               onChange={handleInputChange}
-              placeholder="ひらがなで入力（例：ほんだおさむ）"
+              placeholder={gameMode === 'reading' ? "ひらがな（例：ほんだおさむ）" : "漢字（例：本田理）"}
               autoFocus
             />
           </div>
-          <p className="hint">※入力すると自動で判定されます</p>
+          <p className="hint">※入力すると自動判定（スペース不要）</p>
         </div>
       )}
 
       {endTime && (
         <div className="result-screen" onKeyDown={handleKeyDown}>
           <h2>クリア！</h2>
-          <p className="time-display">
-            記録: {((endTime - startTime) / 1000).toFixed(2)} 秒
-          </p>
-          <button onClick={startGame} className="btn-primary">もう一度挑戦</button>
+          
+          <div className="result-box">
+            <p className="time-label">タイム</p>
+            <p className="time-display">{formatTime((endTime - startTime) / 1000)} 秒</p>
+            
+            {((endTime - startTime) / 1000) === bestTime && (
+              <p className="new-record">✨ New Record! ✨</p>
+            )}
+          </div>
+
+          <div className="retry-buttons">
+            <button onClick={() => startGame(gameMode)} className="btn-primary">
+              もう一度 ({gameMode === 'reading' ? 'ひらがな' : '漢字'})
+            </button>
+            <button onClick={() => {setIsGameStarted(false); setEndTime(null);}} className="btn-text">
+              トップに戻る
+            </button>
+          </div>
         </div>
       )}
     </div>
