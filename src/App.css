@@ -1,42 +1,131 @@
+/* リセットと全体設定 */
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f9f9f9;
+  min-width: 320px;
+  min-height: 100dvh; /* スマホのアドレスバー対策 */
+}
+
 #root {
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0;
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* メインコンテナ：スマホ画面いっぱいに中央寄せ */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+h1 {
+  font-size: 1.4rem;
+  margin: 0 0 1.5rem 0;
+  color: #333;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* ボタンのデザイン：タップしやすい大きさ */
+.btn-primary {
+  background-color: #0070f3;
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  font-size: 1.1rem;
+  border-radius: 50px; /* 丸みをつけてアプリっぽく */
+  cursor: pointer;
+  transition: background 0.3s, transform 0.1s;
+  font-weight: bold;
+  width: 80%; /* スマホで押しやすい幅 */
+  max-width: 300px;
+  touch-action: manipulation; /* タップの反応を良くする */
 }
 
-.card {
-  padding: 2em;
+.btn-primary:active {
+  transform: scale(0.98);
+  background-color: #0051a2;
 }
 
-.read-the-docs {
+/* 問題カードのデザイン */
+.question-card {
+  background-color: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 16px;
+  padding: 2rem 1rem;
+  width: 100%;
+  max-width: 320px; /* スマホの横幅にフィット */
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.student-number {
+  font-size: 3.5rem; /* 少し控えめに */
+  margin: 0;
+  color: #222;
+  font-weight: 800;
+}
+
+/* 入力エリア */
+.input-area {
+  width: 100%;
+  max-width: 320px;
+}
+
+.input-area input {
+  padding: 12px;
+  font-size: 16px; /* 16px以上にするとiPhoneでズームされない */
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  width: 100%;
+  box-sizing: border-box; /* パディングを含めた幅計算 */
+  text-align: center;
+  background-color: #fff;
+  -webkit-appearance: none; /* iOSのデフォルトスタイル解除 */
+}
+
+.input-area input:focus {
+  border-color: #0070f3;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0,112,243,0.2);
+}
+
+.progress {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  font-weight: bold;
+  color: #666;
+  background: #eee;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.hint {
+  margin-top: 1rem;
   color: #888;
+  font-size: 0.85rem;
+}
+
+/* 結果画面 */
+.result-screen .time-display {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #e00;
+  margin: 1.5rem 0;
 }
