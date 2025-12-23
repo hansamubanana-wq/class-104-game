@@ -6,7 +6,7 @@
   --bg-gradient: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
   --card-bg: rgba(255, 255, 255, 0.95);
   --text-color: #333;
-  --teacher-color: #e91e63; /* 先生用の特別な色（ピンク/赤系） */
+  --teacher-color: #e91e63; /* 先生用の特別な色 */
   --shadow-md: 0 8px 30px rgba(0,0,0,0.12);
 }
 
@@ -16,7 +16,24 @@ html, body {
 }
 #root { width: 100%; height: 100%; }
 .container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 1rem; box-sizing: border-box; }
-h1 { font-size: clamp(1.2rem, 5vw, 1.6rem); font-weight: 900; color: white; margin-bottom: 0.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.2); text-align: center; pointer-events: none; }
+
+/* タイトル修正：白い縁取りをつけて視認性MAXにする */
+h1 {
+  font-size: clamp(1.2rem, 5vw, 1.6rem);
+  font-weight: 900;
+  color: white;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  pointer-events: none;
+  /* 白い縁取りと影をつける */
+  text-shadow: 
+    2px 2px 0px rgba(0,0,0,0.2),
+    -1px -1px 0 rgba(0,0,0,0.1),
+    0 0 8px rgba(255,165,0, 0.8);
+  /* もし上記でも見にくい場合、以下の行を有効にすれば文字が青になります */
+  /* color: var(--primary-color); text-shadow: 1px 1px 0 #fff; */
+}
+
 h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.2rem; }
 
 /* カード共通 */
@@ -41,7 +58,7 @@ h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.2rem; }
 
 /* 先生の机 */
 .teacher-desk {
-  background: #fff0f5; /* 先生用の少しリッチな色 */
+  background: #fff0f5;
   border: 2px solid var(--teacher-color);
   border-radius: 8px; padding: 6px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 70px; height: 50px; box-shadow: 0 2px 5px rgba(0,0,0,0.15);
 }

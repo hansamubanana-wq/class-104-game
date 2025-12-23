@@ -23,7 +23,7 @@ function App() {
   const [isShake, setIsShake] = useState(false);
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState("0.00");
 
-  // ランキング (v3のまま継続)
+  // ランキング (v3)
   const [ranking, setRanking] = useState(() => {
     const saved = localStorage.getItem('class104_ranking_v3');
     return saved ? JSON.parse(saved) : [];
@@ -172,6 +172,9 @@ function App() {
       .slice(0, 5);
   };
 
+  // 先生判定 (ID 37)
+  const isTeacher = (id) => id === 37;
+
   return (
     <div className="container">
       {screen === 'start' && (
@@ -222,17 +225,25 @@ function App() {
         </div>
       )}
 
-      {/* 名簿画面（通常モードに戻す） */}
+      {/* 名簿画面（先生を特別配置） */}
       {screen === 'roster' && (
         <div className="roster-screen fade-in">
-          <h2>座席表 (37名)</h2>
+          <h2>座席表</h2>
           <div className="classroom-layout">
             <div className="blackboard-area">
               <div className="blackboard">黒 板</div>
+              {/* 先生席 (ID 37) */}
+              {students.find(s => s.id === 37) && (
+                <div className="teacher-desk">
+                  <span className="teacher-label">Teacher</span>
+                  <span className="teacher-name">{students.find(s => s.id === 37).name.split(' ')[0]}</span>
+                </div>
+              )}
             </div>
             
             <div className="desks-grid">
-              {students.map(s => (
+              {/* 生徒のみ表示 (ID 37以外) */}
+              {students.filter(s => s.id !== 37).map(s => (
                 <div key={s.id} className="desk-item">
                   <span className="desk-id">{s.id}</span>
                   <span className="desk-name">{s.name.split(' ')[0]}</span>
@@ -284,7 +295,7 @@ function App() {
                       else setPracticeSelectIds(practiceSelectIds.filter(id => id !== s.id));
                     }}
                   />
-                  {s.id}. {s.name}
+                  {isTeacher(s.id) ? "Teacher" : s.id}. {s.name}
                 </label>
               ))}
             </div>
@@ -310,7 +321,10 @@ function App() {
           </div>
           
           <div className="question-card">
-            <h2 className="student-number">{currentStudent.id}番</h2>
+            {/* 先生ならTeacher表示 */}
+            <h2 className={isTeacher(currentStudent.id) ? "student-number teacher-mode-text" : "student-number"}>
+              {isTeacher(currentStudent.id) ? "Teacher" : `${currentStudent.id}番`}
+            </h2>
           </div>
 
           <div className={`input-area ${isShake ? 'shake' : ''}`}>
@@ -324,7 +338,7 @@ function App() {
               className={isShake ? 'input-error' : ''}
             />
           </div>
-          {isPractice && !isRandomOrder && <p className="hint">次は {currentStudent.id + 1}番です</p>}
+          {isPractice && !isRandomOrder && !isTeacher(currentStudent.id) && <p className="hint">次は {currentStudent.id + 1}番です</p>}
         </div>
       )}
 
