@@ -4,10 +4,7 @@
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
@@ -21,7 +18,6 @@ body {
 #root {
   max-width: 100%;
   margin: 0 auto;
-  padding: 0;
   text-align: center;
 }
 
@@ -41,7 +37,11 @@ h1 {
   color: #333;
 }
 
-/* モード選択ボタン周り */
+/* ボタン共通 */
+button {
+  touch-action: manipulation;
+}
+
 .mode-select {
   display: flex;
   flex-direction: column;
@@ -51,9 +51,7 @@ h1 {
   margin-bottom: 2rem;
 }
 
-/* メインボタン（青） */
-.btn-primary {
-  background-color: #0070f3;
+.btn-primary, .btn-secondary {
   color: white;
   border: none;
   padding: 0.8rem 2rem;
@@ -64,26 +62,12 @@ h1 {
   font-weight: bold;
   width: 80%;
   max-width: 300px;
-  touch-action: manipulation;
 }
 
-/* サブボタン（赤系・ハードモード用） */
-.btn-secondary {
-  background-color: #e00;
-  color: white;
-  border: none;
-  padding: 0.8rem 2rem;
-  font-size: 1.1rem;
-  border-radius: 50px;
-  cursor: pointer;
-  transition: transform 0.1s;
-  font-weight: bold;
-  width: 80%;
-  max-width: 300px;
-  touch-action: manipulation;
-}
+.btn-primary { background-color: #0070f3; }
+.btn-secondary { background-color: #e00; }
+.btn-primary:active, .btn-secondary:active { transform: scale(0.98); }
 
-/* テキストボタン */
 .btn-text {
   background: none;
   border: none;
@@ -94,19 +78,42 @@ h1 {
   cursor: pointer;
 }
 
-.btn-primary:active, .btn-secondary:active {
-  transform: scale(0.98);
-}
-
-/* 自己ベスト表示 */
-.best-score {
-  font-weight: bold;
-  color: #f5a623;
-  font-size: 1.1rem;
+/* ランキング表示 */
+.ranking-box {
+  background: white;
+  padding: 1rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 300px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   margin-top: 1rem;
 }
 
-/* ゲーム画面ヘッダー */
+.ranking-box h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #555;
+}
+
+.ranking-box ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ranking-box li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+}
+
+.ranking-box li:last-child { border-bottom: none; }
+.ranking-box li.rank-1 { color: #f5a623; font-weight: bold; }
+.rank-time { font-family: monospace; font-size: 1rem; }
+
+/* ゲーム画面 */
 .header-info {
   display: flex;
   justify-content: space-between;
@@ -123,7 +130,6 @@ h1 {
   border-radius: 4px;
 }
 
-/* 問題カード */
 .question-card {
   background-color: #fff;
   border: 1px solid #eaeaea;
@@ -142,18 +148,13 @@ h1 {
   font-weight: 800;
 }
 
-/* 入力エリア */
-.input-area {
-  width: 100%;
-  max-width: 320px;
-}
-
 .input-area input {
   padding: 12px;
   font-size: 16px;
   border: 2px solid #ddd;
   border-radius: 12px;
   width: 100%;
+  max-width: 320px;
   box-sizing: border-box;
   text-align: center;
   background-color: #fff;
@@ -166,25 +167,13 @@ h1 {
   box-shadow: 0 0 0 3px rgba(0,112,243,0.2);
 }
 
-.hint {
-  margin-top: 1rem;
-  color: #888;
-  font-size: 0.85rem;
-}
-
-/* 結果画面 */
+/* 結果・シェア画面 */
 .result-box {
   background: #fff;
   padding: 2rem;
   border-radius: 16px;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.time-label {
-  font-size: 0.9rem;
-  color: #666;
-  margin: 0;
 }
 
 .time-display {
@@ -194,16 +183,40 @@ h1 {
   margin: 0.5rem 0;
 }
 
-.new-record {
-  color: #e00;
-  font-weight: bold;
-  font-size: 1.2rem;
-  animation: flash 1s infinite alternate;
+.share-area {
+  margin-bottom: 2rem;
 }
 
-@keyframes flash {
-  from { opacity: 0.6; }
-  to { opacity: 1; transform: scale(1.05); }
+.share-area p {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.share-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn-line {
+  background-color: #06C755;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-x {
+  background-color: #000;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .retry-buttons {
