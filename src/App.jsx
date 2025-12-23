@@ -68,7 +68,7 @@ function App() {
   // 画面描画
   return (
     <div className="container">
-      <h1>1-104 名前当てタイムアタック</h1>
+      <h1>104 名前当てタイムアタック</h1>
       
       {!isGameStarted && !endTime && (
         <div className="start-screen">
