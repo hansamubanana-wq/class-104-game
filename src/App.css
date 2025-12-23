@@ -6,169 +6,76 @@
   --bg-gradient: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
   --card-bg: rgba(255, 255, 255, 0.95);
   --text-color: #333;
+  --teacher-color: #e91e63; /* 先生用の特別な色（ピンク/赤系） */
   --shadow-md: 0 8px 30px rgba(0,0,0,0.12);
 }
 
 /* 画面全体設定 */
 html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  position: fixed;
-  font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
-  background: var(--bg-gradient);
-  background-size: cover;
-  color: var(--text-color);
-  touch-action: none; 
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-font-smoothing: antialiased;
+  margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; background: var(--bg-gradient); background-size: cover; color: var(--text-color); touch-action: none; -webkit-user-select: none; user-select: none; -webkit-font-smoothing: antialiased;
 }
-
 #root { width: 100%; height: 100%; }
-
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  padding: 1rem;
-  box-sizing: border-box;
-}
-
-h1 {
-  font-size: clamp(1.2rem, 5vw, 1.6rem);
-  font-weight: 900;
-  color: white;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  text-align: center;
-  pointer-events: none;
-}
-
+.container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 1rem; box-sizing: border-box; }
+h1 { font-size: clamp(1.2rem, 5vw, 1.6rem); font-weight: 900; color: white; margin-bottom: 0.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.2); text-align: center; pointer-events: none; }
 h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.2rem; }
 
 /* カード共通 */
 .start-screen, .game-screen, .result-screen, .roster-screen, .practice-screen {
-  background: var(--card-bg);
-  padding: 1.2rem;
-  border-radius: 20px;
-  box-shadow: var(--shadow-md);
-  width: 100%;
-  max-width: 360px;
-  max-height: 85vh;
-  box-sizing: border-box;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  pointer-events: auto;
+  background: var(--card-bg); padding: 1.2rem; border-radius: 20px; box-shadow: var(--shadow-md); width: 100%; max-width: 360px; max-height: 85vh; box-sizing: border-box; text-align: center; display: flex; flex-direction: column; position: relative; pointer-events: auto;
 }
-
 .fade-in { animation: fadeIn 0.3s ease-out; }
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
-}
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
 /* --- 名簿（座席表） --- */
-.roster-screen {
-  max-width: 95%; /* 横に広く使えるように */
-  width: 100%;
-  overflow: hidden;
-}
+.roster-screen { max-width: 95%; width: 100%; overflow: hidden; }
+.classroom-layout { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-.classroom-layout {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+/* 黒板エリア（先生を含む） */
+.blackboard-area {
+  display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;
 }
 
 .blackboard {
-  background: #004d40; /* 黒板色 */
-  color: white;
-  font-weight: bold;
-  padding: 8px;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  border: 4px solid #8d6e63; /* 木枠 */
-  letter-spacing: 4px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  background: #004d40; color: white; font-weight: bold; padding: 8px 20px; border-radius: 4px; border: 4px solid #8d6e63; letter-spacing: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); flex: 1;
 }
 
+/* 先生の机 */
+.teacher-desk {
+  background: #fff0f5; /* 先生用の少しリッチな色 */
+  border: 2px solid var(--teacher-color);
+  border-radius: 8px; padding: 6px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 70px; height: 50px; box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+.teacher-label {
+  font-size: 0.6rem; color: white; background: var(--teacher-color); padding: 1px 6px; border-radius: 10px; font-weight: bold; margin-bottom: 2px;
+}
+.teacher-name { font-size: 0.8rem; font-weight: bold; color: #333; }
+
+/* 生徒の座席グリッド */
 .desks-grid {
-  display: grid;
-  /* 縦6行、横は自動追加 */
-  grid-template-rows: repeat(6, 1fr);
-  grid-auto-flow: column;
-  gap: 8px;
-  padding: 4px;
-  overflow: auto; /* スクロール可能に */
-  -webkit-overflow-scrolling: touch;
-  direction: ltr; /* 左から右へ */
+  display: grid; grid-template-rows: repeat(6, 1fr); grid-auto-flow: column; gap: 8px; padding: 4px; overflow: auto; -webkit-overflow-scrolling: touch; direction: ltr; flex: 1;
 }
-
 .desk-item {
-  background: #fff8e1; /* 机の色 */
-  border: 1px solid #d7ccc8;
-  border-radius: 6px;
-  padding: 6px 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 60px; /* 机の幅 */
-  height: 50px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  background: #fff8e1; border: 1px solid #d7ccc8; border-radius: 6px; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 60px; height: 50px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
-
 .desk-id {
-  font-size: 0.7rem;
-  color: var(--primary-color);
-  font-weight: bold;
-  background: rgba(255,255,255,0.8);
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  line-height: 18px;
-  margin-bottom: 2px;
+  font-size: 0.7rem; color: var(--primary-color); font-weight: bold; background: rgba(255,255,255,0.8); border-radius: 50%; width: 18px; height: 18px; line-height: 18px; margin-bottom: 2px;
 }
+.desk-name { font-size: 0.75rem; font-weight: bold; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
-.desk-name {
-  font-size: 0.75rem;
-  font-weight: bold;
-  color: #333;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-/* --- スタート画面メニュー --- */
+/* --- その他 --- */
 .section-group { margin-bottom: 0.8rem; border-bottom: 1px dashed #ddd; padding-bottom: 0.6rem; }
 .section-group h3 { margin: 0 0 0.4rem 0; font-size: 0.9rem; color: #555; }
 .button-row { display: flex; gap: 0.5rem; justify-content: center; }
 .sub-menu-row { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
-
-button {
-  border: none; padding: 0.7rem 0; font-size: 0.9rem; font-weight: bold; border-radius: 10px; cursor: pointer; transition: all 0.2s; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); touch-action: manipulation;
-}
+button { border: none; padding: 0.7rem 0; font-size: 0.9rem; font-weight: bold; border-radius: 10px; cursor: pointer; transition: all 0.2s; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); touch-action: manipulation; }
 button:active { transform: scale(0.96); }
-
 .btn-primary { background: var(--primary-grad); color: white; }
 .btn-secondary { background: var(--secondary-grad); color: white; }
 .btn-outline { background: white; border: 1px solid #ccc; color: #555; }
 .btn-text { background: none; color: #888; box-shadow: none; text-decoration: underline; margin-top: auto; }
 
 /* ランキング */
-.ranking-area {
-  margin-top: 0.5rem; background: #f8f9fa; border-radius: 12px; padding: 0.5rem; flex: 1; display: flex; flex-direction: column; min-height: 120px;
-}
+.ranking-area { margin-top: 0.5rem; background: #f8f9fa; border-radius: 12px; padding: 0.5rem; flex: 1; display: flex; flex-direction: column; min-height: 120px; }
 .ranking-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
 .ranking-tabs button { padding: 4px; font-size: 0.7rem; background: #ddd; color: #666; box-shadow: none; border-radius: 6px; }
 .ranking-tabs button.active { background: var(--primary-color); color: white; }
@@ -197,7 +104,11 @@ button:active { transform: scale(0.96); }
 .progress-bar-fill { height: 100%; background: #06C755; transition: width 0.3s; }
 .header-info { display: flex; justify-content: space-between; margin: 1rem 0; font-size: 0.9rem; font-weight: bold; color: #666; }
 .timer-badge { color: #e00; background: rgba(255,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+
+/* 問題表示（先生対応） */
 .student-number { font-size: clamp(4rem, 12vw, 5rem); margin: 0.5rem 0 1.5rem 0; color: var(--primary-color); font-weight: 900; line-height: 1; }
+.teacher-mode-text { color: var(--teacher-color); font-size: clamp(3rem, 10vw, 4rem); letter-spacing: -1px; }
+
 .input-area input { width: 100%; padding: 0.8rem; font-size: 1.2rem; border: 2px solid transparent; border-radius: 12px; text-align: center; background: #f0f2f5; font-weight: bold; transform: scale(1); }
 .input-area input:focus { outline: none; background: white; border-color: var(--primary-color); }
 .shake { animation: shake 0.4s both; }

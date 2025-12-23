@@ -7,7 +7,7 @@ export const students = [
   { id: 6, name: "大谷 真成", reading: "おおやしんせい" },
   { id: 7, name: "岡治 初葵", reading: "おかじはつき" },
   { id: 8, name: "奥山 景都", reading: "おくやまけいと" },
-  { id: 9, name: "片山 紗良", reading: "かたやまさら" },
+  { id: 9, name: "片山 紗良", reading: "かたやませら" },
   { id: 10, name: "上條 優衣", reading: "かみじょうゆい" },
   { id: 11, name: "川原 愛生", reading: "かわはらめい" },
   { id: 12, name: "宮 宇俊", reading: "きゅううしゅん" },
@@ -35,5 +35,5 @@ export const students = [
   { id: 34, name: "百瀬 香歩", reading: "ももせかほ" },
   { id: 35, name: "山崎 唯翔", reading: "やまさきゆいと" },
   { id: 36, name: "吉田 壮汰", reading: "よしだそうた" },
-  { id: 37, name: "吉田 智香", reading: "よしだともか" },
+  { id: 37, name: "吉田 智香先生", reading: "よしだともかせんせい" },
 ];
