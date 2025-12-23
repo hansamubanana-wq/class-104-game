@@ -9,20 +9,41 @@
   --shadow-md: 0 8px 30px rgba(0,0,0,0.12);
 }
 
+/* 全体設定：背景を画面に完全に固定する */
+html {
+  height: 100%;
+  overflow: hidden; /* アプリのようにスクロールさせない（必要な部分は内部でスクロール） */
+}
+
 body {
   margin: 0;
   padding: 0;
-  min-height: 100dvh;
+  height: 100%;
+  width: 100%;
   font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  
+  /* 背景を固定して絶対に切れないようにする */
   background: var(--bg-gradient);
+  background-attachment: fixed;
+  background-size: cover;
+  
   color: var(--text-color);
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  
+  /* 余計なスクロールやズームを防ぐ */
+  overflow-y: auto; 
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
 }
 
-#root { width: 100%; margin: 0 auto; }
+#root { 
+  width: 100%; 
+  min-height: 100%;
+  display: flex;
+  justify-content: center;
+}
 
-/* プログレスバー（上部の棒） */
+/* プログレスバー */
 .progress-bar-container {
   position: fixed;
   top: 0;
@@ -35,18 +56,21 @@ body {
 
 .progress-bar-fill {
   height: 100%;
-  background-color: #06C755; /* LINEっぽい緑で進行を表示 */
+  background-color: #06C755;
   width: 0%;
   transition: width 0.3s ease-out;
   box-shadow: 0 0 10px rgba(6, 199, 85, 0.5);
 }
 
+/* コンテナ */
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100dvh; /* スマホのアドレスバー対策 */
   padding: 1rem;
   box-sizing: border-box;
 }
@@ -58,6 +82,7 @@ h1 {
   margin-bottom: 1rem;
   text-shadow: 0 2px 4px rgba(0,0,0,0.2);
   text-align: center;
+  width: 100%;
 }
 
 h2 { margin-top: 0; color: var(--primary-color); }
@@ -74,6 +99,7 @@ h2 { margin-top: 0; color: var(--primary-color); }
   box-sizing: border-box;
   text-align: center;
   animation: fadeIn 0.5s ease-out;
+  margin: auto; /* 上下中央寄せの補助 */
 }
 
 @keyframes fadeIn {
@@ -93,7 +119,6 @@ h2 { margin-top: 0; color: var(--primary-color); }
   40%, 60% { transform: translate3d(6px, 0, 0); }
 }
 
-/* 入力エラー時の色 */
 .input-error {
   border-color: #ff6b6b !important;
   background-color: #fff0f0 !important;
@@ -182,7 +207,7 @@ button:active { transform: scale(0.96); }
 .input-area input {
   width: 100%;
   padding: 0.8rem;
-  font-size: 1.2rem;
+  font-size: 1.2rem; /* フォントサイズ16px以上相当でズーム回避 */
   border: 2px solid transparent;
   border-radius: 12px;
   text-align: center;
