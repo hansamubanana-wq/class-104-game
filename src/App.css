@@ -22,6 +22,25 @@ body {
 
 #root { width: 100%; margin: 0 auto; }
 
+/* プログレスバー（上部の棒） */
+.progress-bar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background-color: rgba(255,255,255,0.3);
+  z-index: 100;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: #06C755; /* LINEっぽい緑で進行を表示 */
+  width: 0%;
+  transition: width 0.3s ease-out;
+  box-shadow: 0 0 10px rgba(6, 199, 85, 0.5);
+}
+
 .container {
   display: flex;
   flex-direction: column;
@@ -62,6 +81,25 @@ h2 { margin-top: 0; color: var(--primary-color); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* 揺れるアニメーション */
+.shake {
+  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-2px, 0, 0); }
+  20%, 80% { transform: translate3d(4px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+  40%, 60% { transform: translate3d(6px, 0, 0); }
+}
+
+/* 入力エラー時の色 */
+.input-error {
+  border-color: #ff6b6b !important;
+  background-color: #fff0f0 !important;
+  color: #e00;
+}
+
 /* モード選択エリア */
 .section-group {
   margin-bottom: 1.5rem;
@@ -77,14 +115,9 @@ h2 { margin-top: 0; color: var(--primary-color); }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
 }
 
-.button-row {
-  display: flex;
-  gap: 0.8rem;
-  justify-content: center;
-}
+.button-row { display: flex; gap: 0.8rem; justify-content: center; }
 
 /* ボタン */
 button {
@@ -92,7 +125,7 @@ button {
   padding: 0.8rem 0;
   font-size: 1rem;
   font-weight: bold;
-  border-radius: 12px; /* 少し四角くして押しやすく */
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   width: 100%;
@@ -113,7 +146,7 @@ button:active { transform: scale(0.96); }
   text-decoration: underline;
 }
 
-/* ゲーム画面 */
+/* ゲーム画面パーツ */
 .question-card {
   background: transparent;
   border: none;
@@ -156,6 +189,7 @@ button:active { transform: scale(0.96); }
   background: #f0f2f5;
   box-sizing: border-box;
   font-weight: bold;
+  transition: background-color 0.2s, border-color 0.2s;
 }
 .input-area input:focus {
   outline: none;
