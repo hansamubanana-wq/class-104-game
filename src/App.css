@@ -29,7 +29,6 @@ html, body {
 
 #root { width: 100%; height: 100%; }
 
-/* コンテナ */
 .container {
   display: flex;
   flex-direction: column;
@@ -41,7 +40,6 @@ html, body {
   box-sizing: border-box;
 }
 
-/* タイトル */
 h1 {
   font-size: clamp(1.2rem, 5vw, 1.6rem);
   font-weight: 900;
@@ -54,7 +52,7 @@ h1 {
 
 h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.2rem; }
 
-/* 共通カード（各画面） */
+/* カード共通 */
 .start-screen, .game-screen, .result-screen, .roster-screen, .practice-screen {
   background: var(--card-bg);
   padding: 1.2rem;
@@ -62,7 +60,7 @@ h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.2rem; }
   box-shadow: var(--shadow-md);
   width: 100%;
   max-width: 360px;
-  max-height: 85vh; /* 高すぎるとはみ出るので制限 */
+  max-height: 85vh;
   box-sizing: border-box;
   text-align: center;
   display: flex;
@@ -71,138 +69,142 @@ h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.2rem; }
   pointer-events: auto;
 }
 
-/* フェードイン */
 .fade-in { animation: fadeIn 0.3s ease-out; }
 @keyframes fadeIn {
   from { opacity: 0; transform: scale(0.98); }
   to { opacity: 1; transform: scale(1); }
 }
 
-/* --- スタート画面のメニュー --- */
-.section-group {
-  margin-bottom: 0.8rem;
-  border-bottom: 1px dashed #ddd;
-  padding-bottom: 0.6rem;
+/* --- 名簿（座席表） --- */
+.roster-screen {
+  max-width: 95%; /* 横に広く使えるように */
+  width: 100%;
+  overflow: hidden;
 }
-.section-group h3 {
-  margin: 0 0 0.4rem 0;
-  font-size: 0.9rem;
-  color: #555;
+
+.classroom-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
+
+.blackboard {
+  background: #004d40; /* 黒板色 */
+  color: white;
+  font-weight: bold;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  border: 4px solid #8d6e63; /* 木枠 */
+  letter-spacing: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.desks-grid {
+  display: grid;
+  /* 縦6行、横は自動追加 */
+  grid-template-rows: repeat(6, 1fr);
+  grid-auto-flow: column;
+  gap: 8px;
+  padding: 4px;
+  overflow: auto; /* スクロール可能に */
+  -webkit-overflow-scrolling: touch;
+  direction: ltr; /* 左から右へ */
+}
+
+.desk-item {
+  background: #fff8e1; /* 机の色 */
+  border: 1px solid #d7ccc8;
+  border-radius: 6px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px; /* 机の幅 */
+  height: 50px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.desk-id {
+  font-size: 0.7rem;
+  color: var(--primary-color);
+  font-weight: bold;
+  background: rgba(255,255,255,0.8);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  margin-bottom: 2px;
+}
+
+.desk-name {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* --- スタート画面メニュー --- */
+.section-group { margin-bottom: 0.8rem; border-bottom: 1px dashed #ddd; padding-bottom: 0.6rem; }
+.section-group h3 { margin: 0 0 0.4rem 0; font-size: 0.9rem; color: #555; }
 .button-row { display: flex; gap: 0.5rem; justify-content: center; }
 .sub-menu-row { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
 
-/* ボタン */
 button {
-  border: none;
-  padding: 0.7rem 0;
-  font-size: 0.9rem;
-  font-weight: bold;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-  width: 100%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  touch-action: manipulation;
+  border: none; padding: 0.7rem 0; font-size: 0.9rem; font-weight: bold; border-radius: 10px; cursor: pointer; transition: all 0.2s; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); touch-action: manipulation;
 }
 button:active { transform: scale(0.96); }
 
 .btn-primary { background: var(--primary-grad); color: white; }
 .btn-secondary { background: var(--secondary-grad); color: white; }
-.btn-outline {
-  background: white; border: 1px solid #ccc; color: #555;
-}
-.btn-text {
-  background: none; color: #888; box-shadow: none; text-decoration: underline; margin-top: auto;
-}
+.btn-outline { background: white; border: 1px solid #ccc; color: #555; }
+.btn-text { background: none; color: #888; box-shadow: none; text-decoration: underline; margin-top: auto; }
 
-/* --- ランキングエリア --- */
+/* ランキング */
 .ranking-area {
-  margin-top: 0.5rem;
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 0.5rem;
-  flex: 1; /* 余ったスペースを埋める */
-  display: flex;
-  flex-direction: column;
-  min-height: 120px;
+  margin-top: 0.5rem; background: #f8f9fa; border-radius: 12px; padding: 0.5rem; flex: 1; display: flex; flex-direction: column; min-height: 120px;
 }
 .ranking-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
-.ranking-tabs button {
-  padding: 4px; font-size: 0.7rem; background: #ddd; color: #666; box-shadow: none; border-radius: 6px;
-}
+.ranking-tabs button { padding: 4px; font-size: 0.7rem; background: #ddd; color: #666; box-shadow: none; border-radius: 6px; }
 .ranking-tabs button.active { background: var(--primary-color); color: white; }
-
-.ranking-list {
-  list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch;
-}
-.ranking-list li {
-  display: flex; justify-content: space-between; padding: 4px 8px; border-bottom: 1px dashed #ddd; font-size: 0.8rem;
-}
+.ranking-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+.ranking-list li { display: flex; justify-content: space-between; padding: 4px 8px; border-bottom: 1px dashed #ddd; font-size: 0.8rem; }
 .ranking-list li.rank-1 { color: #f5a623; font-weight: bold; }
 .rank-num { width: 20px; text-align: left; }
 .rank-time { font-family: monospace; font-weight: bold; }
 .rank-date { font-size: 0.7rem; color: #999; }
 .no-data { font-size: 0.8rem; color: #999; padding: 10px; }
 
-/* --- 名簿画面 --- */
-.roster-list {
-  overflow-y: auto;
-  flex: 1;
-  text-align: left;
-  margin-bottom: 1rem;
-  -webkit-overflow-scrolling: touch;
-}
-.roster-item {
-  display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee;
-}
-.roster-id {
-  font-weight: bold; width: 40px; color: var(--primary-color); text-align: center;
-}
-.roster-info { display: flex; flex-direction: column; }
-.roster-name { font-weight: bold; font-size: 1rem; }
-.roster-reading { font-size: 0.75rem; color: #888; }
-
-/* --- 練習設定画面 --- */
-.practice-option {
-  margin-bottom: 1rem; text-align: left;
-}
+/* 練習設定 */
+.practice-option { margin-bottom: 1rem; text-align: left; }
 .practice-option label { font-size: 0.9rem; font-weight: bold; color: #555; display: block; margin-bottom: 0.3rem;}
 .toggle-row { display: flex; gap: 0.5rem; }
 .toggle-row button { background: #eee; color: #888; box-shadow: none; }
 .toggle-row button.active { background: var(--primary-color); color: white; }
-
 .range-inputs { display: flex; align-items: center; justify-content: center; gap: 10px; }
-.range-inputs input {
-  width: 60px; padding: 8px; font-size: 1.2rem; text-align: center; border: 1px solid #ccc; border-radius: 8px;
-}
-.select-list {
-  height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 8px; text-align: left; border-radius: 8px;
-}
+.range-inputs input { width: 60px; padding: 8px; font-size: 1.2rem; text-align: center; border: 1px solid #ccc; border-radius: 8px; }
+.select-list { height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 8px; text-align: left; border-radius: 8px; }
 .checkbox-item { display: block; padding: 4px 0; cursor: pointer; }
 .checkbox-item input { margin-right: 8px; transform: scale(1.2); }
 
-/* --- ゲーム画面 --- */
-.progress-bar-container {
-  position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 20px 20px 0 0; overflow: hidden;
-}
+/* ゲーム画面 */
+.progress-bar-container { position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 20px 20px 0 0; overflow: hidden; }
 .progress-bar-fill { height: 100%; background: #06C755; transition: width 0.3s; }
-
 .header-info { display: flex; justify-content: space-between; margin: 1rem 0; font-size: 0.9rem; font-weight: bold; color: #666; }
 .timer-badge { color: #e00; background: rgba(255,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
 .student-number { font-size: clamp(4rem, 12vw, 5rem); margin: 0.5rem 0 1.5rem 0; color: var(--primary-color); font-weight: 900; line-height: 1; }
-
-.input-area input {
-  width: 100%; padding: 0.8rem; font-size: 1.2rem; border: 2px solid transparent; border-radius: 12px; text-align: center; background: #f0f2f5; font-weight: bold;
-}
+.input-area input { width: 100%; padding: 0.8rem; font-size: 1.2rem; border: 2px solid transparent; border-radius: 12px; text-align: center; background: #f0f2f5; font-weight: bold; transform: scale(1); }
 .input-area input:focus { outline: none; background: white; border-color: var(--primary-color); }
 .shake { animation: shake 0.4s both; }
 .input-error { border-color: #ff6b6b !important; background: #fff0f0 !important; color: #e00; }
-@keyframes shake {
-  10%, 90% { transform: translate3d(-2px, 0, 0); } 30%, 70% { transform: translate3d(-4px, 0, 0); } 50% { transform: translate3d(4px, 0, 0); }
-}
+@keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 30%, 70% { transform: translate3d(-4px, 0, 0); } 50% { transform: translate3d(4px, 0, 0); } }
 
-/* 結果画面 */
+/* 結果 */
 .time-display { font-size: 2.5rem; font-weight: 900; color: var(--primary-color); margin: 0.5rem 0; }
 .share-buttons { display: flex; gap: 0.5rem; justify-content: center; margin: 1rem 0;}
 .btn-line { background: #06C755; color: white; width: auto; padding: 0.7rem 1.5rem; }

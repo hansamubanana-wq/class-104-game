@@ -5,17 +5,16 @@ import { students } from './students';
 import { playSound } from './SoundManager';
 
 function App() {
-  // 画面管理: 'start', 'game', 'result', 'roster', 'practice'
   const [screen, setScreen] = useState('start');
   
   // ゲーム設定
-  const [gameMode, setGameMode] = useState('reading'); // 'reading' or 'name'
+  const [gameMode, setGameMode] = useState('reading');
   const [targetCount, setTargetCount] = useState(10);
-  const [isRandomOrder, setIsRandomOrder] = useState(true); // ランダムか順番か
-  const [isPractice, setIsPractice] = useState(false); // 練習モードかどうか
+  const [isRandomOrder, setIsRandomOrder] = useState(true);
+  const [isPractice, setIsPractice] = useState(false);
   
-  // ゲームプレイ用ステート
-  const [questionList, setQuestionList] = useState([]); // 出題する生徒リスト
+  // ゲームプレイ用
+  const [questionList, setQuestionList] = useState([]);
   const [currentStudent, setCurrentStudent] = useState(null);
   const [inputVal, setInputVal] = useState('');
   const [completedIds, setCompletedIds] = useState([]);
@@ -24,17 +23,17 @@ function App() {
   const [isShake, setIsShake] = useState(false);
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState("0.00");
 
-  // ランキング用ステート
+  // ランキング (キーをv3に変更してリセット)
   const [ranking, setRanking] = useState(() => {
-    const saved = localStorage.getItem('class104_ranking_v2');
+    const saved = localStorage.getItem('class104_ranking_v3');
     return saved ? JSON.parse(saved) : [];
   });
-  const [rankingTab, setRankingTab] = useState('10-reading'); // ランキングの表示切り替え
+  const [rankingTab, setRankingTab] = useState('10-reading');
 
-  // 練習モード用ステート
+  // 練習モード設定
   const [practiceRange, setPracticeRange] = useState({ start: 1, end: 37 });
   const [practiceSelectIds, setPracticeSelectIds] = useState([]);
-  const [practiceType, setPracticeType] = useState('range'); // 'range' or 'select'
+  const [practiceType, setPracticeType] = useState('range');
 
   const inputRef = useRef(null);
 
@@ -51,24 +50,20 @@ function App() {
     return () => clearInterval(interval);
   }, [screen, startTime, endTime]);
 
-  // --- ゲーム開始処理 ---
+  // --- ゲーム開始 ---
   
-  // 通常モード開始
   const startNormalGame = (mode, count) => {
     playSound('dummy');
     setGameMode(mode);
     setTargetCount(count);
     setIsRandomOrder(true);
-    setIsPractice(false);
-    
-    // 全員対象
+    setIsPractice(false); // 確実にfalseにする
     setupGame(students, mode, true);
   };
 
-  // 練習モード開始
   const startPracticeGame = () => {
     playSound('dummy');
-    setIsPractice(true);
+    setIsPractice(true); // 確実にtrueにする
     
     let targets = [];
     if (practiceType === 'range') {
@@ -83,16 +78,25 @@ function App() {
     }
 
     setTargetCount(targets.length);
-    // モードは練習設定画面で選ばれたものを使う（ここでは仮でひらがな、あとでボタンで分岐可能にするが、今回はひらがな/漢字ボタンで開始させる）
-    // ※UI側で startPracticeGame を呼ぶときにモードを渡す形にする
   };
 
-  // 共通セットアップ
+  // startPracticeGameから呼ばれる実際の開始処理
+  const executePracticeStart = (mode) => {
+    let targets = practiceType === 'range' 
+      ? students.filter(s => s.id >= practiceRange.start && s.id <= practiceRange.end)
+      : students.filter(s => practiceSelectIds.includes(s.id));
+    
+    if(targets.length === 0) return alert("生徒を選んでください");
+    
+    // ここで再度セットしておく
+    setIsPractice(true);
+    setupGame(targets, mode, isRandomOrder);
+  }
+
   const setupGame = (targetStudents, mode, random) => {
     setGameMode(mode);
     setIsRandomOrder(random);
     
-    // 出題リストを作成（ランダムならシャッフル、順番ならID順）
     let list = [...targetStudents];
     if (random) {
       list.sort(() => Math.random() - 0.5);
@@ -107,23 +111,18 @@ function App() {
     setCurrentTimeDisplay("0.00");
     setScreen('game');
     setStartTime(Date.now());
-    
-    // 最初の問題
     setCurrentStudent(list[0]);
   };
 
-  // 次の問題へ
   const nextQuestion = (newCompletedIds) => {
     if (newCompletedIds.length >= questionList.length) {
       finishGame();
       return;
     }
-    // 次の生徒を取り出す
     const nextIndex = newCompletedIds.length;
     setCurrentStudent(questionList[nextIndex]);
   };
 
-  // ゲーム終了
   const finishGame = () => {
     const end = Date.now();
     setEndTime(end);
@@ -135,22 +134,23 @@ function App() {
     const currentTime = (end - startTime) / 1000;
     setCurrentTimeDisplay(currentTime.toFixed(2));
 
-    // 練習モードでなければランキング保存
-    if (!isPractice) {
-      const newRecord = {
-        date: new Date().toLocaleDateString(),
-        time: currentTime,
-        mode: gameMode,
-        count: targetCount
-      };
-      const newRanking = [...ranking, newRecord].sort((a, b) => a.time - b.time); 
-      // 全保存しておいて表示時にフィルタリング＆上位表示する
-      setRanking(newRanking);
-      localStorage.setItem('class104_ranking_v2', JSON.stringify(newRanking));
+    // ★重要: 練習モードの場合は絶対に保存しない
+    if (isPractice) {
+      return; 
     }
+
+    // 通常モードのみ保存
+    const newRecord = {
+      date: new Date().toLocaleDateString(),
+      time: currentTime,
+      mode: gameMode,
+      count: targetCount
+    };
+    const newRanking = [...ranking, newRecord].sort((a, b) => a.time - b.time); 
+    setRanking(newRanking);
+    localStorage.setItem('class104_ranking_v3', JSON.stringify(newRanking));
   };
 
-  // 入力判定
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInputVal(val);
@@ -175,12 +175,10 @@ function App() {
     }
   };
 
-  // 紙吹雪
   const triggerConfetti = () => {
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
   };
 
-  // シェア
   const shareResult = (platform) => {
     const time = currentTimeDisplay;
     const modeStr = gameMode === 'reading' ? 'ひらがな' : '漢字';
@@ -191,19 +189,16 @@ function App() {
     if (platform === 'x') window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
   };
 
-  // ランキングフィルタリング表示用
   const getFilteredRanking = () => {
     const [rCount, rMode] = rankingTab.split('-');
     const countNum = parseInt(rCount);
     return ranking
       .filter(r => r.count === countNum && r.mode === rMode)
-      .slice(0, 5); // 上位5件
+      .slice(0, 5);
   };
 
-  // --- 描画 ---
   return (
     <div className="container">
-      {/* スタート画面 */}
       {screen === 'start' && (
         <div className="start-screen fade-in">
           <h1>104 名前当て</h1>
@@ -226,12 +221,11 @@ function App() {
             </div>
 
             <div className="sub-menu-row">
-              <button onClick={() => setScreen('practice')} className="btn-outline">🔰 練習・カスタム</button>
+              <button onClick={() => { setIsPractice(true); setScreen('practice'); }} className="btn-outline">🔰 練習・カスタム</button>
               <button onClick={() => setScreen('roster')} className="btn-outline">📖 名簿を見る</button>
             </div>
           </div>
 
-          {/* ランキング表示 */}
           <div className="ranking-area">
             <div className="ranking-tabs">
               <button className={rankingTab === '10-reading' ? 'active' : ''} onClick={()=>setRankingTab('10-reading')}>10ひ</button>
@@ -253,26 +247,25 @@ function App() {
         </div>
       )}
 
-      {/* 名簿画面 */}
+      {/* 名簿画面（座席表） */}
       {screen === 'roster' && (
         <div className="roster-screen fade-in">
-          <h2>1年104組 名簿</h2>
-          <div className="roster-list">
-            {students.map(s => (
-              <div key={s.id} className="roster-item">
-                <span className="roster-id">{s.id}</span>
-                <div className="roster-info">
-                  <span className="roster-name">{s.name}</span>
-                  <span className="roster-reading">{s.reading}</span>
+          <h2>座席表 (37名)</h2>
+          <div className="classroom-layout">
+            <div className="blackboard">黒 板</div>
+            <div className="desks-grid">
+              {students.map(s => (
+                <div key={s.id} className="desk-item">
+                  <span className="desk-id">{s.id}</span>
+                  <span className="desk-name">{s.name.split(' ')[0]}</span>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
           <button onClick={() => setScreen('start')} className="btn-text">戻る</button>
         </div>
       )}
 
-      {/* 練習設定画面 */}
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
           <h2>練習モード設定</h2>
@@ -320,27 +313,13 @@ function App() {
           )}
 
           <div className="button-row" style={{marginTop: '1rem'}}>
-            <button onClick={() => {
-              let targets = practiceType === 'range' 
-                ? students.filter(s => s.id >= practiceRange.start && s.id <= practiceRange.end)
-                : students.filter(s => practiceSelectIds.includes(s.id));
-              if(targets.length === 0) return alert("生徒を選んでください");
-              setupGame(targets, 'reading', isRandomOrder);
-            }} className="btn-primary">ひらがなで開始</button>
-            
-            <button onClick={() => {
-              let targets = practiceType === 'range' 
-                ? students.filter(s => s.id >= practiceRange.start && s.id <= practiceRange.end)
-                : students.filter(s => practiceSelectIds.includes(s.id));
-              if(targets.length === 0) return alert("生徒を選んでください");
-              setupGame(targets, 'name', isRandomOrder);
-            }} className="btn-secondary">漢字で開始</button>
+            <button onClick={() => executePracticeStart('reading')} className="btn-primary">ひらがな</button>
+            <button onClick={() => executePracticeStart('name')} className="btn-secondary">漢字</button>
           </div>
           <button onClick={() => setScreen('start')} className="btn-text">戻る</button>
         </div>
       )}
 
-      {/* ゲーム画面 */}
       {screen === 'game' && currentStudent && (
         <div className="game-screen fade-in">
           <div className="progress-bar-container">
@@ -371,7 +350,6 @@ function App() {
         </div>
       )}
 
-      {/* 結果画面 */}
       {screen === 'result' && (
         <div className="result-screen fade-in">
           <h2>🎉 CLEAR! 🎉</h2>
@@ -380,6 +358,7 @@ function App() {
           <div className="result-box">
             <p className="time-label">Time</p>
             <p className="time-display">{currentTimeDisplay} 秒</p>
+            {isPractice && <p style={{fontSize:'0.8rem', color:'#999', marginTop:'5px'}}>※練習モードのため記録は保存されません</p>}
           </div>
 
           <div className="share-area">
