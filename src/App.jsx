@@ -68,6 +68,7 @@ function App() {
     
     if(targets.length === 0) return alert("生徒を選んでください");
     
+    setTargetCount(targets.length); // 練習モードの人数もセット
     setIsPractice(true);
     setupGame(targets, mode, isRandomOrder);
   }
@@ -94,7 +95,8 @@ function App() {
   };
 
   const nextQuestion = (newCompletedIds) => {
-    if (newCompletedIds.length >= questionList.length) {
+    // 【修正】 リスト全体の長さではなく、目標人数(targetCount)に達したら終了
+    if (newCompletedIds.length >= targetCount) {
       finishGame();
       return;
     }
@@ -177,9 +179,11 @@ function App() {
 
   return (
     <div className="container">
+      {/* タイトルをここ（共通エリア）に戻しました */}
+      <h1>104 名前当て</h1>
+
       {screen === 'start' && (
         <div className="start-screen fade-in">
-          <h1>104 名前当て</h1>
           
           <div className="menu-buttons">
             <div className="section-group">
@@ -225,7 +229,7 @@ function App() {
         </div>
       )}
 
-      {/* 名簿画面（フルネーム・読み仮名・先生席） */}
+      {/* 名簿画面 */}
       {screen === 'roster' && (
         <div className="roster-screen fade-in">
           <h2>座席表</h2>
@@ -314,11 +318,11 @@ function App() {
       {screen === 'game' && currentStudent && (
         <div className="game-screen fade-in">
           <div className="progress-bar-container">
-            <div className="progress-bar-fill" style={{ width: `${(completedIds.length / questionList.length) * 100}%` }}></div>
+            <div className="progress-bar-fill" style={{ width: `${(completedIds.length / targetCount) * 100}%` }}></div>
           </div>
           
           <div className="header-info">
-             <span className="progress">残り: {questionList.length - completedIds.length} 人</span>
+             <span className="progress">残り: {targetCount - completedIds.length} 人</span>
              <span className="timer-badge">⏱ {currentTimeDisplay}s</span>
           </div>
           
