@@ -225,7 +225,7 @@ function App() {
         </div>
       )}
 
-      {/* 名簿画面（先生を特別配置） */}
+      {/* 名簿画面（フルネーム・読み仮名・先生席） */}
       {screen === 'roster' && (
         <div className="roster-screen fade-in">
           <h2>座席表</h2>
@@ -236,7 +236,8 @@ function App() {
               {students.find(s => s.id === 37) && (
                 <div className="teacher-desk">
                   <span className="teacher-label">Teacher</span>
-                  <span className="teacher-name">{students.find(s => s.id === 37).name.split(' ')[0]}</span>
+                  <span className="teacher-name">{students.find(s => s.id === 37).name}</span>
+                  <span className="teacher-reading">{students.find(s => s.id === 37).reading}</span>
                 </div>
               )}
             </div>
@@ -246,7 +247,8 @@ function App() {
               {students.filter(s => s.id !== 37).map(s => (
                 <div key={s.id} className="desk-item">
                   <span className="desk-id">{s.id}</span>
-                  <span className="desk-name">{s.name.split(' ')[0]}</span>
+                  <span className="desk-name">{s.name}</span>
+                  <span className="desk-reading">{s.reading}</span>
                 </div>
               ))}
             </div>

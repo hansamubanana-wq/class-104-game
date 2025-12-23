@@ -30,8 +30,6 @@ h1 {
     2px 2px 0px rgba(0,0,0,0.2),
     -1px -1px 0 rgba(0,0,0,0.1),
     0 0 8px rgba(255,165,0, 0.8);
-  /* もし上記でも見にくい場合、以下の行を有効にすれば文字が青になります */
-  /* color: var(--primary-color); text-shadow: 1px 1px 0 #fff; */
 }
 
 h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.2rem; }
@@ -53,31 +51,37 @@ h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.2rem; }
 }
 
 .blackboard {
-  background: #004d40; color: white; font-weight: bold; padding: 8px 20px; border-radius: 4px; border: 4px solid #8d6e63; letter-spacing: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); flex: 1;
+  background: #004d40; color: white; font-weight: bold; padding: 8px 16px; border-radius: 4px; border: 4px solid #8d6e63; letter-spacing: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); flex: 1; font-size: 0.9rem;
 }
 
 /* 先生の机 */
 .teacher-desk {
   background: #fff0f5;
   border: 2px solid var(--teacher-color);
-  border-radius: 8px; padding: 6px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 70px; height: 50px; box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  border-radius: 8px; padding: 4px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 80px; height: 60px; box-shadow: 0 2px 5px rgba(0,0,0,0.15);
 }
 .teacher-label {
   font-size: 0.6rem; color: white; background: var(--teacher-color); padding: 1px 6px; border-radius: 10px; font-weight: bold; margin-bottom: 2px;
 }
-.teacher-name { font-size: 0.8rem; font-weight: bold; color: #333; }
+.teacher-name { font-size: 0.75rem; font-weight: bold; color: #333; line-height: 1.2;}
+.teacher-reading { font-size: 0.5rem; color: #777; white-space: nowrap; transform: scale(0.9);}
 
 /* 生徒の座席グリッド */
 .desks-grid {
-  display: grid; grid-template-rows: repeat(6, 1fr); grid-auto-flow: column; gap: 8px; padding: 4px; overflow: auto; -webkit-overflow-scrolling: touch; direction: ltr; flex: 1;
+  display: grid; grid-template-rows: repeat(6, 1fr); grid-auto-flow: column; gap: 6px; padding: 4px; overflow: auto; -webkit-overflow-scrolling: touch; direction: ltr; flex: 1;
 }
 .desk-item {
-  background: #fff8e1; border: 1px solid #d7ccc8; border-radius: 6px; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 60px; height: 50px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  background: #fff8e1; border: 1px solid #d7ccc8; border-radius: 6px; padding: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 70px; height: 60px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 .desk-id {
-  font-size: 0.7rem; color: var(--primary-color); font-weight: bold; background: rgba(255,255,255,0.8); border-radius: 50%; width: 18px; height: 18px; line-height: 18px; margin-bottom: 2px;
+  font-size: 0.65rem; color: var(--primary-color); font-weight: bold; background: rgba(255,255,255,0.8); border-radius: 50%; width: 16px; height: 16px; line-height: 16px; margin-bottom: 2px;
 }
-.desk-name { font-size: 0.75rem; font-weight: bold; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.desk-name { 
+  font-size: 0.65rem; font-weight: bold; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.2;
+}
+.desk-reading {
+  font-size: 0.5rem; color: #777; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; transform: scale(0.9);
+}
 
 /* --- その他 --- */
 .section-group { margin-bottom: 0.8rem; border-bottom: 1px dashed #ddd; padding-bottom: 0.6rem; }
@@ -121,8 +125,6 @@ button:active { transform: scale(0.96); }
 .progress-bar-fill { height: 100%; background: #06C755; transition: width 0.3s; }
 .header-info { display: flex; justify-content: space-between; margin: 1rem 0; font-size: 0.9rem; font-weight: bold; color: #666; }
 .timer-badge { color: #e00; background: rgba(255,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
-
-/* 問題表示（先生対応） */
 .student-number { font-size: clamp(4rem, 12vw, 5rem); margin: 0.5rem 0 1.5rem 0; color: var(--primary-color); font-weight: 900; line-height: 1; }
 .teacher-mode-text { color: var(--teacher-color); font-size: clamp(3rem, 10vw, 4rem); letter-spacing: -1px; }
 
