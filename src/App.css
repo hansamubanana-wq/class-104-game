@@ -16,13 +16,14 @@ html, body {
   padding: 0; 
   width: 100%; 
   height: 100%; 
+  /* 画面全体のバウンス（びよーん）は防ぐ */
   overflow: hidden; 
   position: fixed; 
   font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; 
   background: var(--bg-gradient); 
   background-size: cover; 
   color: var(--text-color); 
-  touch-action: none; 
+  touch-action: pan-y; /* 縦スクロールのみ許可 */
   -webkit-user-select: none; 
   user-select: none; 
   -webkit-font-smoothing: antialiased;
@@ -30,49 +31,62 @@ html, body {
 
 #root { width: 100%; height: 100%; }
 
-/* コンテナ：dvhを使ってスマホの高さに完璧に合わせる */
+/* コンテナ：ここをスクロール可能にするのがポイント */
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: center; /* 基本は中央寄せ */
   width: 100%;
-  height: 100dvh; /* ここ重要 */
+  height: 100%;
   padding: 1rem;
   box-sizing: border-box;
+  overflow-y: auto; /* 中身があふれたらここだけスクロール */
+  -webkit-overflow-scrolling: touch;
 }
+
+/* コンテナの中身が少ないときも中央に配置するためのハック */
+.container::before, .container::after {
+  content: '';
+  flex: 0 0 auto; /* 伸び縮みしない余白 */
+  height: 1rem;   /* 最低限の余白 */
+}
+.container::before { margin-top: auto; }
+.container::after { margin-bottom: auto; }
+
 
 /* タイトル */
 h1 {
   font-size: clamp(1.2rem, 5vw, 1.5rem);
   font-weight: 900;
   color: var(--primary-color);
-  margin-bottom: 0.5rem; /* 余白を減らす */
-  margin-top: 0;
+  margin: 0 0 1rem 0;
   text-align: center;
   pointer-events: none;
   text-shadow: 2px 2px 0px #fff, -2px -2px 0px #fff, -2px 2px 0px #fff, 2px -2px 0px #fff;
-  flex-shrink: 0; /* 縮まないようにする */
+  flex-shrink: 0; /* タイトルも縮ませない */
 }
 
 h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.1rem; }
 
-/* カード共通：高さ制限を撤廃 */
+/* カード共通 */
 .start-screen, .game-screen, .result-screen, .roster-screen, .practice-screen {
   background: var(--card-bg); 
-  padding: 1rem; /* パディングを少し減らす */
+  padding: 1.2rem; 
   border-radius: 20px; 
   box-shadow: var(--shadow-md); 
   width: 100%; 
   max-width: 340px; 
-  /* max-height: 80vh;  ←これが原因だったので削除！ */
   box-sizing: border-box; 
   text-align: center; 
   display: flex; 
   flex-direction: column; 
   position: relative; 
   pointer-events: auto; 
-  margin: auto; 
+  
+  /* ★ここが修正のキモ：カードが勝手に縮まないようにする */
+  flex-shrink: 0; 
+  margin: 0 auto; /* 左右中央 */
 }
 
 .fade-in { animation: fadeIn 0.3s ease-out; }
@@ -85,17 +99,17 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.1rem; }
 .header-info { 
   display: flex; 
   justify-content: space-between; 
-  margin: 0.5rem 0 0.5rem 0; /* 余白調整 */
+  margin: 0.5rem 0 0.5rem 0; 
   font-size: 0.8rem; 
   font-weight: bold; 
   color: #666; 
 }
 .timer-badge { color: #e00; background: rgba(255,0,0,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
 
-/* 問題表示：サイズを少し調整してはみ出し防止 */
+/* 問題表示 */
 .student-number { 
   font-size: clamp(3.5rem, 12vw, 4.5rem); 
-  margin: 0.2rem 0 1rem 0; /* 上下の余白を詰める */
+  margin: 0.2rem 0 1rem 0; 
   color: var(--primary-color); 
   font-weight: 900; 
   line-height: 1; 
@@ -117,11 +131,11 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.1rem; }
 }
 .input-area input:focus { outline: none; background: white; border-color: var(--primary-color); }
 
-/* ヒントや注釈 */
+/* ヒント */
 .hint { font-size: 0.7rem; color: #999; margin-top: 0.2rem; }
 
 /* --- 名簿（座席表） --- */
-.roster-screen { max-width: 95%; width: 100%; overflow: hidden; max-height: 85vh; /* 名簿だけはスクロールさせるので高さ制限あり */ }
+.roster-screen { max-width: 95%; width: 100%; overflow: hidden; max-height: 80vh; /* 名簿は例外的に高さ制限あり（中身スクロールのため） */ }
 .classroom-layout { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
 .blackboard-area { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 0.5rem; }
