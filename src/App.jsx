@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import confetti from 'canvas-confetti'; // 紙吹雪用
+import confetti from 'canvas-confetti';
 import './App.css';
 import { students } from './students';
 import { playSound } from './SoundManager';
@@ -13,9 +13,11 @@ function App() {
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   const [isGameStarted, setIsGameStarted] = useState(false);
-  const [isShake, setIsShake] = useState(false); // 揺れアニメーション用
+  const [isShake, setIsShake] = useState(false);
+  
+  // リアルタイム計測用のState
+  const [currentTimeDisplay, setCurrentTimeDisplay] = useState("0.00");
 
-  // ランキング読み込み
   const [ranking, setRanking] = useState(() => {
     const saved = localStorage.getItem('class104_ranking_v2');
     return saved ? JSON.parse(saved) : [];
@@ -23,7 +25,19 @@ function App() {
 
   const inputRef = useRef(null);
 
-  // ゲーム開始
+  // タイマー処理
+  useEffect(() => {
+    let interval;
+    if (isGameStarted && startTime && !endTime) {
+      interval = setInterval(() => {
+        const now = Date.now();
+        const diff = (now - startTime) / 1000;
+        setCurrentTimeDisplay(diff.toFixed(2));
+      }, 50); // 0.05秒ごとに画面更新
+    }
+    return () => clearInterval(interval);
+  }, [isGameStarted, startTime, endTime]);
+
   const startGame = (mode, count) => {
     playSound('dummy'); 
     setGameMode(mode);
@@ -33,6 +47,7 @@ function App() {
     setInputVal('');
     setIsGameStarted(true);
     setStartTime(Date.now());
+    setCurrentTimeDisplay("0.00");
     pickNextStudent([], count);
   };
 
@@ -50,17 +65,18 @@ function App() {
     setCurrentStudent(remainingStudents[randomIndex]);
   };
 
-  // ゲーム終了（紙吹雪発動！）
   const finishGame = () => {
     const end = Date.now();
     setEndTime(end);
     setCurrentStudent(null);
     playSound('clear');
-    
-    // 紙吹雪エフェクト
     triggerConfetti();
 
     const currentTime = (end - startTime) / 1000;
+    
+    // 最終タイムをセット（ズレ防止）
+    setCurrentTimeDisplay(currentTime.toFixed(2));
+
     const newRecord = {
       date: new Date().toLocaleDateString(),
       time: currentTime,
@@ -72,39 +88,25 @@ function App() {
     localStorage.setItem('class104_ranking_v2', JSON.stringify(newRanking));
   };
 
-  // 紙吹雪の設定
   const triggerConfetti = () => {
     const duration = 3000;
     const end = Date.now() + duration;
-
     (function frame() {
       confetti({
-        particleCount: 5,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
+        particleCount: 5, angle: 60, spread: 55, origin: { x: 0 },
         colors: ['#ff6b6b', '#4a90e2', '#f6d365']
       });
       confetti({
-        particleCount: 5,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
+        particleCount: 5, angle: 120, spread: 55, origin: { x: 1 },
         colors: ['#ff6b6b', '#4a90e2', '#f6d365']
       });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
+      if (Date.now() < end) requestAnimationFrame(frame);
     }());
   };
 
-  // 入力判定（間違い判定を追加）
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInputVal(val);
-    
-    // 揺れをリセット
     setIsShake(false);
 
     if (!currentStudent) return;
@@ -113,19 +115,15 @@ function App() {
     const cleanVal = val.replace(/\s+/g, '');
     const cleanTarget = targetRaw.replace(/\s+/g, '');
 
-    // 正解判定
     if (cleanVal === cleanTarget) {
       playSound('correct');
       const newCompletedIds = [...completedIds, currentStudent.id];
       setCompletedIds(newCompletedIds);
       setInputVal('');
       pickNextStudent(newCompletedIds, targetCount);
-    } 
-    // 間違い判定（入力された文字が、正解の先頭と一致していなければ「間違い」とみなして揺らす）
-    else {
-      // まだ入力途中ならOK、明らかに違う文字を打ったらNG
+    } else {
       if (!cleanTarget.startsWith(cleanVal) && cleanVal.length > 0) {
-        setIsShake(true); // 揺らす！
+        setIsShake(true);
       }
     }
   };
@@ -149,7 +147,6 @@ function App() {
 
   return (
     <div className="container">
-      {/* プログレスバー（上部の進捗棒） */}
       {isGameStarted && !endTime && (
         <div className="progress-bar-container">
           <div 
@@ -202,7 +199,7 @@ function App() {
         <div className="game-screen">
           <div className="header-info">
              <span className="progress">残り: {targetCount - completedIds.length} 人</span>
-             <span className="mode-badge">{targetCount}人 / {gameMode === 'reading' ? 'ひ' : '漢'}</span>
+             <span className="timer-badge">⏱ {currentTimeDisplay}s</span>
           </div>
           
           <div className="question-card">
@@ -220,7 +217,6 @@ function App() {
               className={isShake ? 'input-error' : ''}
             />
           </div>
-          <p className="hint">※入力すると自動判定</p>
         </div>
       )}
 
@@ -231,7 +227,7 @@ function App() {
           
           <div className="result-box">
             <p className="time-label">Time</p>
-            <p className="time-display">{formatTime((endTime - startTime) / 1000)} 秒</p>
+            <p className="time-display">{currentTimeDisplay} 秒</p>
           </div>
 
           <div className="share-area">

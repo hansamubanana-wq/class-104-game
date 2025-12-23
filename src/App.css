@@ -9,39 +9,25 @@
   --shadow-md: 0 8px 30px rgba(0,0,0,0.12);
 }
 
-/* 全体設定：背景を画面に完全に固定する */
-html {
-  height: 100%;
-  overflow: hidden; /* アプリのようにスクロールさせない（必要な部分は内部でスクロール） */
-}
-
-body {
+/* 画面全体を完全に固定する設定 */
+html, body {
   margin: 0;
   padding: 0;
-  height: 100%;
   width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
   font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
-  
-  /* 背景を固定して絶対に切れないようにする */
   background: var(--bg-gradient);
-  background-attachment: fixed;
   background-size: cover;
-  
   color: var(--text-color);
+  touch-action: none; 
+  -webkit-user-select: none;
+  user-select: none;
   -webkit-font-smoothing: antialiased;
-  
-  /* 余計なスクロールやズームを防ぐ */
-  overflow-y: auto; 
-  touch-action: manipulation;
-  -webkit-text-size-adjust: 100%;
 }
 
-#root { 
-  width: 100%; 
-  min-height: 100%;
-  display: flex;
-  justify-content: center;
-}
+#root { width: 100%; height: 100%; }
 
 /* プログレスバー */
 .progress-bar-container {
@@ -49,7 +35,7 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  height: 8px;
+  height: 6px;
   background-color: rgba(255,255,255,0.3);
   z-index: 100;
 }
@@ -62,27 +48,26 @@ body {
   box-shadow: 0 0 10px rgba(6, 199, 85, 0.5);
 }
 
-/* コンテナ */
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 100%;
-  min-height: 100dvh; /* スマホのアドレスバー対策 */
+  height: 100%;
   padding: 1rem;
   box-sizing: border-box;
 }
 
 h1 {
-  font-size: clamp(1.2rem, 5vw, 1.8rem);
+  font-size: clamp(1.1rem, 4.5vw, 1.5rem);
   font-weight: 900;
   color: white;
   margin-bottom: 1rem;
   text-shadow: 0 2px 4px rgba(0,0,0,0.2);
   text-align: center;
   width: 100%;
+  pointer-events: none;
 }
 
 h2 { margin-top: 0; color: var(--primary-color); }
@@ -91,27 +76,24 @@ h2 { margin-top: 0; color: var(--primary-color); }
 /* カード共通 */
 .start-screen, .game-screen, .result-screen {
   background: var(--card-bg);
-  padding: 2rem 1.5rem;
-  border-radius: 24px;
+  padding: 1.5rem;
+  border-radius: 20px;
   box-shadow: var(--shadow-md);
   width: 100%;
-  max-width: 360px;
+  max-width: 350px;
   box-sizing: border-box;
   text-align: center;
-  animation: fadeIn 0.5s ease-out;
-  margin: auto; /* 上下中央寄せの補助 */
+  animation: fadeIn 0.4s ease-out;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
-/* 揺れるアニメーション */
-.shake {
-  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
-}
-
+.shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
 @keyframes shake {
   10%, 90% { transform: translate3d(-2px, 0, 0); }
   20%, 80% { transform: translate3d(4px, 0, 0); }
@@ -127,35 +109,32 @@ h2 { margin-top: 0; color: var(--primary-color); }
 
 /* モード選択エリア */
 .section-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   border-bottom: 1px dashed #ddd;
-  padding-bottom: 1rem;
+  padding-bottom: 0.8rem;
 }
 .section-group:last-of-type { border-bottom: none; }
-
 .section-group h3 {
-  margin: 0 0 0.8rem 0;
-  font-size: 1rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
   color: #555;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+.button-row { display: flex; gap: 0.6rem; justify-content: center; }
 
-.button-row { display: flex; gap: 0.8rem; justify-content: center; }
-
-/* ボタン */
 button {
   border: none;
   padding: 0.8rem 0;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: bold;
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
   width: 100%;
   color: white;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 3px 5px rgba(0,0,0,0.1);
   touch-action: manipulation;
 }
 button:active { transform: scale(0.96); }
@@ -166,22 +145,16 @@ button:active { transform: scale(0.96); }
   background: none;
   color: #888;
   box-shadow: none;
-  font-size: 0.8rem;
-  margin-top: 1rem;
+  font-size: 0.75rem;
+  margin-top: 0.8rem;
   text-decoration: underline;
 }
 
 /* ゲーム画面パーツ */
-.question-card {
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin: 0;
-}
-
+.question-card { background: transparent; border: none; padding: 0; margin: 0; }
 .student-number {
-  font-size: clamp(4rem, 15vw, 6rem);
-  margin: 1rem 0 2rem 0;
+  font-size: clamp(3.5rem, 12vw, 5rem);
+  margin: 0.5rem 0 1.5rem 0;
   color: var(--primary-color);
   font-weight: 900;
   line-height: 1;
@@ -191,44 +164,43 @@ button:active { transform: scale(0.96); }
 .header-info {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
   font-weight: bold;
   color: #666;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  align-items: center;
 }
-.mode-badge {
-  background: #eee;
-  color: #444;
-  padding: 4px 10px;
-  border-radius: 12px;
+.timer-badge {
+  color: #e00;
+  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: bold;
+  background: rgba(255, 0, 0, 0.05);
+  padding: 2px 6px;
+  border-radius: 6px;
 }
 
-.input-area { width: 100%; margin-bottom: 1rem; }
+.input-area { width: 100%; margin-bottom: 0.8rem; }
 .input-area input {
   width: 100%;
-  padding: 0.8rem;
-  font-size: 1.2rem; /* フォントサイズ16px以上相当でズーム回避 */
+  padding: 0.7rem;
+  font-size: 1.2rem;
   border: 2px solid transparent;
   border-radius: 12px;
   text-align: center;
   background: #f0f2f5;
   box-sizing: border-box;
   font-weight: bold;
-  transition: background-color 0.2s, border-color 0.2s;
+  transform: scale(1);
 }
-.input-area input:focus {
-  outline: none;
-  background: white;
-  border-color: var(--primary-color);
-}
-.hint { font-size: 0.75rem; color: #999; margin-top: 0.5rem; }
+.input-area input:focus { outline: none; background: white; border-color: var(--primary-color); }
 
 /* 結果画面 */
 .time-display {
-  font-size: clamp(3rem, 10vw, 4.5rem);
+  font-size: clamp(2.5rem, 9vw, 4rem);
   font-weight: 900;
   color: var(--primary-color);
-  margin: 0.5rem 0 1.5rem 0;
+  margin: 0.5rem 0 1rem 0;
   line-height: 1;
 }
 .share-buttons { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
@@ -238,30 +210,27 @@ button:active { transform: scale(0.96); }
 
 /* ランキング */
 .ranking-box {
-  margin-top: 1rem;
+  margin-top: 0.8rem;
   background: #f8f9fa;
   border-radius: 12px;
-  padding: 1rem;
+  padding: 0.8rem;
   width: 100%;
   box-sizing: border-box;
+  max-height: 150px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .ranking-box ul { list-style: none; padding: 0; margin: 0; }
 .ranking-box li {
   display: flex;
   justify-content: space-between;
-  padding: 0.5rem 0;
+  padding: 0.4rem 0;
   border-bottom: 1px dashed #ddd;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 .ranking-box li:last-child { border-bottom: none; }
-.rank-left { display: flex; gap: 0.5rem; align-items: center; }
-.rank-num { font-weight: bold; width: 20px; }
-.rank-mode-tag {
-  background: #e9ecef;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  color: #666;
-}
+.rank-left { display: flex; gap: 0.3rem; align-items: center; }
+.rank-num { font-weight: bold; width: 18px; }
+.rank-mode-tag { background: #e9ecef; padding: 2px 5px; border-radius: 4px; font-size: 0.65rem; color: #666; }
 .rank-time { font-family: monospace; font-weight: bold; }
-.ranking-box li.rank-1 .rank-num { color: #f5a623; font-size: 1rem; }
+.ranking-box li.rank-1 .rank-num { color: #f5a623; font-size: 0.9rem; }
