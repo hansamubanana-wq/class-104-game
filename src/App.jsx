@@ -58,7 +58,7 @@ function App() {
   // コンボ関連
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
-  const [comboTimeLeft, setComboTimeLeft] = useState(0); // コンボ残り時間
+  const [comboTimeLeft, setComboTimeLeft] = useState(0); 
   const [rankResult, setRankResult] = useState(null);
 
   // ランキング
@@ -88,17 +88,17 @@ function App() {
     return () => clearInterval(interval);
   }, [screen, startTime, endTime, penaltyTime, countdown]);
 
-  // コンボゲージタイマー（ここが新機能）
+  // コンボゲージタイマー
   useEffect(() => {
     let interval;
     if (screen === 'game' && combo > 0 && !endTime) {
       interval = setInterval(() => {
         setComboTimeLeft(prev => {
           if (prev <= 100) {
-            setCombo(0); // 時間切れでコンボリセット
+            setCombo(0); 
             return 0;
           }
-          return prev - 100; // 100msずつ減らす
+          return prev - 100; 
         });
       }, 100);
     }
@@ -214,7 +214,8 @@ function App() {
   };
 
   const nextQuestion = (newCompletedIds) => {
-    if (newCompletedIds.length >= targetCount) {
+    // ★修正：目標数に達するか、問題リストを全て消化したら終了（先生除外時のバグ修正）
+    if (newCompletedIds.length >= targetCount || newCompletedIds.length >= questionList.length) {
       finishGame();
       return;
     }
@@ -226,7 +227,7 @@ function App() {
   const handlePass = () => {
     if (!currentStudent) return;
     playSoundSafe('dummy'); 
-    setCombo(0); // パスはさすがにコンボ切れ
+    setCombo(0); 
     const timeTaken = (Date.now() - questionStartTime) / 1000;
     setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken + 5, isPass: true }]); 
     setPenaltyTime(prev => prev + 5); 
@@ -263,7 +264,6 @@ function App() {
     localStorage.setItem('class104_ranking_v3', JSON.stringify(newRanking));
   };
 
-  // 文字入力判定（変更点：ミスしてもコンボリセットしない）
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInputVal(val);
@@ -305,8 +305,6 @@ function App() {
       const newCombo = combo + 1;
       setCombo(newCombo);
       if (newCombo > maxCombo) setMaxCombo(newCombo);
-      
-      // ★正解したらコンボ時間をリセット
       setComboTimeLeft(COMBO_LIMIT);
 
       const timeTaken = (Date.now() - questionStartTime) / 1000;
@@ -320,8 +318,6 @@ function App() {
       if (!isPartialMatch) {
         if (isButton || val.length > 0) {
           setIsShake(true);
-          // ★変更：ここで setCombo(0) をしない！
-          // ボタンの時だけはペナルティ感出すために消してもいいが、統一して「ミスはノーカウント」にする
           if (isButton) playSoundSafe('dummy'); 
         }
       }
@@ -552,11 +548,15 @@ function App() {
       {screen === 'game' && currentStudent && (
         <div className="game-screen fade-in">
           <div className="progress-bar-container">
-            <div className="progress-bar-fill" style={{ width: `${(completedIds.length / targetCount) * 100}%` }}></div>
+            {/* ★修正：分母を「実際の問題数」に合わせて100%になるように計算 */}
+            <div 
+              className="progress-bar-fill" 
+              style={{ width: `${(completedIds.length / Math.min(targetCount, questionList.length)) * 100}%` }}
+            ></div>
           </div>
           
           <div className="header-info">
-             <span className="progress">残り: {targetCount - completedIds.length} 人</span>
+             <span className="progress">残り: {Math.min(targetCount, questionList.length) - completedIds.length} 人</span>
              <div className="combo-container">
                {combo > 1 && <span className="combo-badge">🔥 {combo} COMBO!</span>}
                {combo > 0 && (
