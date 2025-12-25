@@ -16,7 +16,7 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   
   // ゲーム設定
-  const [gameMode, setGameMode] = useState('reading');
+  const [gameMode, setGameMode] = useState('reading'); // 'reading', 'name', 'id'
   const [targetCount, setTargetCount] = useState(10);
   const [isRandomOrder, setIsRandomOrder] = useState(true);
   const [isPractice, setIsPractice] = useState(false);
@@ -73,7 +73,7 @@ function App() {
       timer = setTimeout(() => {
         setCountdown(countdown - 1);
         if (countdown - 1 > 0) playSoundSafe('dummy'); 
-      }, 1000); // 1秒ごとに更新
+      }, 1000); 
     } else if (countdown === 0) {
       playSoundSafe('dummy'); 
       setCountdown(null);
@@ -192,11 +192,39 @@ function App() {
 
     if (!currentStudent) return;
 
-    const targetRaw = gameMode === 'reading' ? currentStudent.reading : currentStudent.name;
-    const cleanVal = toHiragana(val).replace(/\s+/g, ''); 
-    const cleanTarget = targetRaw.replace(/\s+/g, '');
+    let isCorrect = false;
+    let isPartialMatch = false;
 
-    if (cleanVal === cleanTarget) {
+    // ★モードによって判定を変える
+    if (gameMode === 'id') {
+      // 番号当てモード
+      const cleanVal = val.replace(/\s+/g, '');
+      const targetIdStr = currentStudent.id.toString();
+      
+      if (cleanVal === targetIdStr) {
+        isCorrect = true;
+      } else {
+        // 部分一致判定 (桁数が合ってればNG、入力途中ならOK)
+        if (targetIdStr.startsWith(cleanVal) && cleanVal.length > 0) {
+          isPartialMatch = true;
+        }
+      }
+    } else {
+      // 名前当てモード
+      const targetRaw = gameMode === 'reading' ? currentStudent.reading : currentStudent.name;
+      const cleanVal = toHiragana(val).replace(/\s+/g, ''); 
+      const cleanTarget = targetRaw.replace(/\s+/g, '');
+
+      if (cleanVal === cleanTarget) {
+        isCorrect = true;
+      } else {
+        if (cleanTarget.startsWith(cleanVal) && cleanVal.length > 0) {
+          isPartialMatch = true;
+        }
+      }
+    }
+
+    if (isCorrect) {
       playSoundSafe('correct');
       const timeTaken = (Date.now() - questionStartTime) / 1000;
       setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken, isPass: false }]);
@@ -205,7 +233,8 @@ function App() {
       setInputVal('');
       nextQuestion(newCompletedIds);
     } else {
-      if (!cleanTarget.startsWith(cleanVal) && cleanVal.length > 0) {
+      // 完全一致でもなく、部分一致（入力途中）でもない場合は揺らす
+      if (!isPartialMatch && val.length > 0) {
         setIsShake(true);
       }
     }
@@ -218,7 +247,10 @@ function App() {
 
   const shareResult = (platform) => {
     const time = currentTimeDisplay;
-    const modeStr = gameMode === 'reading' ? 'ひらがな' : '漢字';
+    let modeStr = 'ひらがな';
+    if(gameMode === 'name') modeStr = '漢字';
+    if(gameMode === 'id') modeStr = '番号';
+    
     const typeStr = isPractice ? '練習' : `${targetCount}人モード`;
     const text = `【104名前当て】${typeStr}(${modeStr})を${time}秒でクリア！`;
     const url = window.location.href;
@@ -226,6 +258,7 @@ function App() {
     if (platform === 'x') window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
   };
 
+  // ランキング表示用フィルター（タブ切り替え対応）
   const getFilteredRanking = () => {
     const [rCount, rMode] = rankingTab.split('-');
     const countNum = parseInt(rCount);
@@ -248,6 +281,26 @@ function App() {
 
   const isTeacher = (id) => id === 37;
 
+  // 問題文の表示内容を決定
+  const getQuestionText = () => {
+    if (!currentStudent) return "";
+    
+    // 番号当てモードの場合、名前を表示
+    if (gameMode === 'id') {
+      return isTeacher(currentStudent.id) ? "Teacher" : currentStudent.name;
+    }
+    
+    // 名前当てモードの場合、番号を表示
+    return isTeacher(currentStudent.id) ? "Teacher" : `${currentStudent.id}番`;
+  };
+
+  // プレースホルダーの決定
+  const getPlaceholder = () => {
+    if (gameMode === 'id') return "番号を入力";
+    if (gameMode === 'name') return "漢字";
+    return "ひらがな";
+  };
+
   return (
     <div className="container">
       <button className="mute-button" onClick={() => setIsMuted(!isMuted)}>
@@ -261,17 +314,19 @@ function App() {
           <div className="menu-buttons">
             <div className="section-group">
               <h3>⚡️ サクッと (10問)</h3>
-              <div className="button-row">
+              <div className="button-row three-cols">
                 <button onClick={() => startNormalGame('reading', 10)} className="btn-primary">ひらがな</button>
                 <button onClick={() => startNormalGame('name', 10)} className="btn-secondary">漢字</button>
+                <button onClick={() => startNormalGame('id', 10)} className="btn-outline">番号</button>
               </div>
             </div>
 
             <div className="section-group">
               <h3>🔥 全員 (37問)</h3>
-              <div className="button-row">
+              <div className="button-row three-cols">
                 <button onClick={() => startNormalGame('reading', 37)} className="btn-primary">ひらがな</button>
                 <button onClick={() => startNormalGame('name', 37)} className="btn-secondary">漢字</button>
+                <button onClick={() => startNormalGame('id', 37)} className="btn-outline">番号</button>
               </div>
             </div>
 
@@ -283,11 +338,14 @@ function App() {
 
           <div className="ranking-area">
             <div className="ranking-header">
-              <div className="ranking-tabs">
+              {/* ランキングタブ：数が多いのでスクロール可能にするか、主要なものだけ表示 */}
+              <div className="ranking-tabs scrollable-tabs">
                 <button className={rankingTab === '10-reading' ? 'active' : ''} onClick={()=>setRankingTab('10-reading')}>10ひ</button>
                 <button className={rankingTab === '10-name' ? 'active' : ''} onClick={()=>setRankingTab('10-name')}>10漢</button>
+                <button className={rankingTab === '10-id' ? 'active' : ''} onClick={()=>setRankingTab('10-id')}>10番</button>
                 <button className={rankingTab === '37-reading' ? 'active' : ''} onClick={()=>setRankingTab('37-reading')}>全ひ</button>
                 <button className={rankingTab === '37-name' ? 'active' : ''} onClick={()=>setRankingTab('37-name')}>全漢</button>
+                <button className={rankingTab === '37-id' ? 'active' : ''} onClick={()=>setRankingTab('37-id')}>全番</button>
               </div>
             </div>
             
@@ -308,7 +366,6 @@ function App() {
         </div>
       )}
 
-      {/* ★修正：key={countdown} を追加してアニメーションを毎回リセット */ }
       {screen === 'countdown' && (
         <div className="countdown-overlay fade-in">
           <div className="countdown-number" key={countdown}>
@@ -387,9 +444,10 @@ function App() {
               ))}
             </div>
           )}
-          <div className="button-row" style={{marginTop: '1rem'}}>
+          <div className="button-row three-cols" style={{marginTop: '1rem'}}>
             <button onClick={() => executePracticeStart('reading')} className="btn-primary">ひらがな</button>
             <button onClick={() => executePracticeStart('name')} className="btn-secondary">漢字</button>
+            <button onClick={() => executePracticeStart('id')} className="btn-outline">番号</button>
           </div>
           <button onClick={() => setScreen('start')} className="btn-text">戻る</button>
         </div>
@@ -407,18 +465,21 @@ function App() {
           </div>
           
           <div className="question-card">
-            <h2 className={isTeacher(currentStudent.id) ? "student-number teacher-mode-text" : "student-number"}>
-              {isTeacher(currentStudent.id) ? "Teacher" : `${currentStudent.id}番`}
+            {/* ★修正：問題表示部分の出し分け */}
+            <h2 className={isTeacher(currentStudent.id) && gameMode !== 'id' ? "student-number teacher-mode-text" : "student-number"}>
+              {getQuestionText()}
             </h2>
           </div>
 
           <div className={`input-area ${isShake ? 'shake' : ''}`}>
+            {/* ★修正：番号モードなら数字キーを出す */}
             <input
               ref={inputRef}
-              type="text"
+              type={gameMode === 'id' ? "tel" : "text"} 
+              inputMode={gameMode === 'id' ? "numeric" : "text"}
               value={inputVal}
               onChange={handleInputChange}
-              placeholder={gameMode === 'reading' ? "ひらがな" : "漢字"}
+              placeholder={getPlaceholder()}
               autoFocus
               className={isShake ? 'input-error' : ''}
             />
@@ -432,7 +493,10 @@ function App() {
       {screen === 'result' && (
         <div className="result-screen fade-in">
           <h2>🎉 CLEAR! 🎉</h2>
-          <p className="sub-title">{isPractice ? '練習モード' : `${targetCount}人モード`} ({gameMode === 'reading' ? 'ひらがな' : '漢字'})</p>
+          <p className="sub-title">
+            {isPractice ? '練習モード' : `${targetCount}人モード`} 
+            ({gameMode === 'reading' ? 'ひらがな' : gameMode === 'name' ? '漢字' : '番号'})
+          </p>
           
           <div className="result-box">
             <p className="time-label">Time</p>
