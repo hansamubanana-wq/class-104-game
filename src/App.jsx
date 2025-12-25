@@ -12,22 +12,25 @@ const toHiragana = (str) => {
   });
 };
 
-// ヘルパー：ランク判定 (1問あたりの秒数)
+// ヘルパー：ランク判定
 const calculateRank = (totalTime, count) => {
   const avg = totalTime / count;
-  if (avg < 1.5) return "S"; // 神速
-  if (avg < 2.2) return "A"; // 超人
-  if (avg < 3.0) return "B"; // 達人
-  return "C"; // 駆け出し
+  if (avg < 1.5) return "S";
+  if (avg < 2.2) return "A";
+  if (avg < 3.0) return "B";
+  return "C";
 };
+
+// 定数：コンボ猶予時間（ミリ秒）
+const COMBO_LIMIT = 5000; 
 
 function App() {
   const [screen, setScreen] = useState('start');
   const [isMuted, setIsMuted] = useState(false);
   
   // ゲーム設定
-  const [gameMode, setGameMode] = useState('reading'); // 'reading', 'name', 'id'
-  const [inputMethod, setInputMethod] = useState('typing'); // 'typing' or 'choice' (4択)
+  const [gameMode, setGameMode] = useState('reading');
+  const [inputMethod, setInputMethod] = useState('typing');
   const [targetCount, setTargetCount] = useState(10);
   const [isRandomOrder, setIsRandomOrder] = useState(true);
   const [isPractice, setIsPractice] = useState(false);
@@ -39,25 +42,26 @@ function App() {
   // ゲームプレイ用
   const [questionList, setQuestionList] = useState([]);
   const [currentStudent, setCurrentStudent] = useState(null);
-  const [choices, setChoices] = useState([]); // 4択の選択肢
+  const [choices, setChoices] = useState([]);
   const [inputVal, setInputVal] = useState('');
   const [completedIds, setCompletedIds] = useState([]);
   
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
-  const [isShake, setIsShake] = useState(false); // 間違い演出
+  const [isShake, setIsShake] = useState(false);
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState("0.00");
   
   const [penaltyTime, setPenaltyTime] = useState(0); 
   const [questionStartTime, setQuestionStartTime] = useState(0); 
   const [questionStats, setQuestionStats] = useState([]); 
 
-  // 新機能：コンボ & ランク
+  // コンボ関連
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
+  const [comboTimeLeft, setComboTimeLeft] = useState(0); // コンボ残り時間
   const [rankResult, setRankResult] = useState(null);
 
-  // ランキング (v3)
+  // ランキング
   const [ranking, setRanking] = useState(() => {
     const saved = localStorage.getItem('class104_ranking_v3');
     return saved ? JSON.parse(saved) : [];
@@ -71,7 +75,7 @@ function App() {
 
   const inputRef = useRef(null);
 
-  // タイマー
+  // 全体タイマー
   useEffect(() => {
     let interval;
     if (screen === 'game' && startTime && !endTime && countdown === null) {
@@ -83,6 +87,23 @@ function App() {
     }
     return () => clearInterval(interval);
   }, [screen, startTime, endTime, penaltyTime, countdown]);
+
+  // コンボゲージタイマー（ここが新機能）
+  useEffect(() => {
+    let interval;
+    if (screen === 'game' && combo > 0 && !endTime) {
+      interval = setInterval(() => {
+        setComboTimeLeft(prev => {
+          if (prev <= 100) {
+            setCombo(0); // 時間切れでコンボリセット
+            return 0;
+          }
+          return prev - 100; // 100msずつ減らす
+        });
+      }, 100);
+    }
+    return () => clearInterval(interval);
+  }, [screen, combo, endTime]);
 
   // カウントダウン
   useEffect(() => {
@@ -100,7 +121,7 @@ function App() {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // 4択生成 (問題が変わるたびに実行)
+  // 4択生成
   useEffect(() => {
     if (screen === 'game' && currentStudent && inputMethod === 'choice') {
       generateChoicesForStudent(currentStudent);
@@ -111,20 +132,15 @@ function App() {
     if (!isMuted) playSound(type);
   };
 
-  // --- 4択生成ロジック ---
   const generateChoicesForStudent = (student) => {
-    // 正解のテキスト
     let correctText = "";
     if (gameMode === 'id') correctText = student.id.toString();
     else if (gameMode === 'name') correctText = student.name;
     else correctText = student.reading;
 
-    // ダミーの候補リスト（自分以外、かつ先生(ID37)を除外するかはモード次第だが、選択肢としては先生が出ても面白いかも？今回は混乱避けるため先生もダミーに含める）
-    // ただしIDモードなら先生は番号持たないので除外済みリストから選ぶのが安全
     let pool = students.filter(s => s.id !== student.id);
     if (gameMode === 'id') pool = pool.filter(s => s.id !== 37);
 
-    // シャッフルして3つ選ぶ
     pool.sort(() => Math.random() - 0.5);
     const decoys = pool.slice(0, 3).map(s => {
       if (gameMode === 'id') return s.id.toString();
@@ -132,13 +148,11 @@ function App() {
       return s.reading;
     });
 
-    // 正解 + ダミー3つ を混ぜる
     const mixed = [correctText, ...decoys].sort(() => Math.random() - 0.5);
     setChoices(mixed);
   };
 
   // --- ゲーム開始 ---
-  
   const startNormalGame = (mode, count) => {
     setPendingGameSettings({ targetStudents: students, mode, count, random: true, practice: false });
     startCountdown();
@@ -169,22 +183,15 @@ function App() {
     setIsPractice(practice);
     
     let list = [...targetStudents];
-
-    // ★修正：番号モードなら先生を除外
-    if (mode === 'id') {
-      list = list.filter(s => s.id !== 37);
-    }
+    if (mode === 'id') list = list.filter(s => s.id !== 37);
     if (list.length === 0) {
       alert("出題対象がいません");
       setScreen('start');
       return;
     }
 
-    if (random) {
-      list.sort(() => Math.random() - 0.5);
-    } else {
-      list.sort((a, b) => a.id - b.id);
-    }
+    if (random) list.sort(() => Math.random() - 0.5);
+    else list.sort((a, b) => a.id - b.id);
 
     setQuestionList(list);
     setCompletedIds([]);
@@ -194,13 +201,12 @@ function App() {
     setPenaltyTime(0); 
     setQuestionStats([]); 
     
-    // コンボ・ランク初期化
     setCombo(0);
     setMaxCombo(0);
+    setComboTimeLeft(0);
     setRankResult(null);
 
     setScreen('game');
-    
     const now = Date.now();
     setStartTime(now);
     setQuestionStartTime(now); 
@@ -217,11 +223,10 @@ function App() {
     setQuestionStartTime(Date.now()); 
   };
 
-  // パス機能（コンボ途切れる）
   const handlePass = () => {
     if (!currentStudent) return;
     playSoundSafe('dummy'); 
-    setCombo(0); // コンボリセット
+    setCombo(0); // パスはさすがにコンボ切れ
     const timeTaken = (Date.now() - questionStartTime) / 1000;
     setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken + 5, isPass: true }]); 
     setPenaltyTime(prev => prev + 5); 
@@ -242,7 +247,6 @@ function App() {
     const finalTime = (end - startTime) / 1000 + penaltyTime;
     setCurrentTimeDisplay(finalTime.toFixed(2));
     
-    // ランク判定
     const r = calculateRank(finalTime, targetCount);
     setRankResult(r);
 
@@ -259,32 +263,28 @@ function App() {
     localStorage.setItem('class104_ranking_v3', JSON.stringify(newRanking));
   };
 
-  // 文字入力ハンドラ
+  // 文字入力判定（変更点：ミスしてもコンボリセットしない）
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInputVal(val);
     setIsShake(false);
 
     if (!currentStudent) return;
-    checkAnswer(val, false); // false = isButton
+    checkAnswer(val, false);
   };
 
-  // 4択ボタンハンドラ
   const handleChoiceClick = (val) => {
-    checkAnswer(val, true); // true = isButton
+    checkAnswer(val, true);
   };
 
-  // 正誤判定共通ロジック
   const checkAnswer = (val, isButton) => {
     let isCorrect = false;
     let isPartialMatch = false;
 
-    // 入力データの正規化
     const cleanVal = gameMode === 'reading' && !isButton 
       ? toHiragana(val).replace(/\s+/g, '') 
       : val.replace(/\s+/g, '');
 
-    // 正解データの正規化
     let targetRaw = "";
     if (gameMode === 'id') targetRaw = currentStudent.id.toString();
     else if (gameMode === 'name') targetRaw = currentStudent.name;
@@ -295,18 +295,19 @@ function App() {
     if (cleanVal === cleanTarget) {
       isCorrect = true;
     } else {
-      // ボタン入力じゃない場合のみ部分一致を許容
       if (!isButton && cleanTarget.startsWith(cleanVal) && cleanVal.length > 0) {
         isPartialMatch = true;
       }
     }
 
     if (isCorrect) {
-      // 正解処理
       playSoundSafe('correct');
       const newCombo = combo + 1;
       setCombo(newCombo);
       if (newCombo > maxCombo) setMaxCombo(newCombo);
+      
+      // ★正解したらコンボ時間をリセット
+      setComboTimeLeft(COMBO_LIMIT);
 
       const timeTaken = (Date.now() - questionStartTime) / 1000;
       setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken, isPass: false }]);
@@ -316,12 +317,12 @@ function App() {
       setInputVal('');
       nextQuestion(newCompletedIds);
     } else {
-      // 不正解処理
       if (!isPartialMatch) {
         if (isButton || val.length > 0) {
           setIsShake(true);
-          setCombo(0); // コンボリセット
-          if (isButton) playSoundSafe('dummy'); // ボタン間違い音
+          // ★変更：ここで setCombo(0) をしない！
+          // ボタンの時だけはペナルティ感出すために消してもいいが、統一して「ミスはノーカウント」にする
+          if (isButton) playSoundSafe('dummy'); 
         }
       }
     }
@@ -340,7 +341,7 @@ function App() {
     const typeStr = isPractice ? '練習' : `${targetCount}人モード`;
     const rankStr = rankResult ? `【ランク${rankResult}】` : '';
     
-    const text = `${rankStr} 104名前当て ${typeStr}(${modeStr})を${time}秒でクリア！`;
+    const text = `${rankStr} 104名前当て ${typeStr}(${modeStr})を${time}秒でクリア！ MAXコンボ:${maxCombo}`;
     const url = window.location.href;
     if (platform === 'line') window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text + '\n' + url)}`, '_blank');
     if (platform === 'x') window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
@@ -392,22 +393,11 @@ function App() {
 
       {screen === 'start' && (
         <div className="start-screen fade-in">
-          {/* 入力モード切替スイッチ */}
           <div className="input-mode-switch">
             <span className="switch-label">入力方法:</span>
             <div className="switch-body">
-              <button 
-                className={inputMethod === 'typing' ? 'active' : ''} 
-                onClick={() => setInputMethod('typing')}
-              >
-                ⌨️ キーボード
-              </button>
-              <button 
-                className={inputMethod === 'choice' ? 'active' : ''} 
-                onClick={() => setInputMethod('choice')}
-              >
-                🔘 4択ボタン
-              </button>
+              <button className={inputMethod === 'typing' ? 'active' : ''} onClick={()=>setInputMethod('typing')}>⌨️ キーボード</button>
+              <button className={inputMethod === 'choice' ? 'active' : ''} onClick={()=>setInputMethod('choice')}>🔘 4択ボタン</button>
             </div>
           </div>
 
@@ -505,7 +495,6 @@ function App() {
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
           <h2>練習モード設定</h2>
-          {/* 練習モードでも入力方法を選べるようにする */}
           <div className="practice-option">
             <label>入力方法:</label>
             <div className="toggle-row">
@@ -513,7 +502,6 @@ function App() {
               <button className={inputMethod === 'choice' ? 'active' : ''} onClick={()=>setInputMethod('choice')}>4択</button>
             </div>
           </div>
-
           <div className="practice-option">
             <label>出題順:</label>
             <div className="toggle-row">
@@ -569,8 +557,17 @@ function App() {
           
           <div className="header-info">
              <span className="progress">残り: {targetCount - completedIds.length} 人</span>
-             {/* コンボ表示 */}
-             {combo > 1 && <span className="combo-badge">🔥 {combo} COMBO!</span>}
+             <div className="combo-container">
+               {combo > 1 && <span className="combo-badge">🔥 {combo} COMBO!</span>}
+               {combo > 0 && (
+                 <div className="combo-gauge-wrapper">
+                   <div 
+                     className="combo-gauge-fill" 
+                     style={{ width: `${(comboTimeLeft / COMBO_LIMIT) * 100}%` }}
+                   ></div>
+                 </div>
+               )}
+             </div>
              <span className="timer-badge">⏱ {currentTimeDisplay}s</span>
           </div>
           
@@ -594,7 +591,6 @@ function App() {
               />
             </div>
           ) : (
-            // 4択ボタンエリア
             <div className={`choice-grid ${isShake ? 'shake' : ''}`}>
               {choices.map((choice, i) => (
                 <button key={i} className="choice-btn" onClick={() => handleChoiceClick(choice)}>
@@ -605,7 +601,6 @@ function App() {
           )}
 
           <button onClick={handlePass} className="pass-button">パス (+5秒)</button>
-          
           {isPractice && !isRandomOrder && !isTeacher(currentStudent.id) && <p className="hint">次は {currentStudent.id + 1}番です</p>}
         </div>
       )}
