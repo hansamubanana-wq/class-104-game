@@ -1,19 +1,13 @@
-/* カスタム色定義：豪華バージョン */
+/* カスタム色定義 */
 :root {
   --primary-color: #3a6073;
   --secondary-color: #c94b4b;
-  /* ゴールドグラデーション */
   --gold-grad: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
   --gold-color: #b38728;
-  
-  /* ★修正：ボタン用の色が消えていたので復活 */
   --btn-primary-grad: linear-gradient(135deg, #3a6073 0%, #16222a 100%);
   --btn-secondary-grad: linear-gradient(135deg, #c94b4b 0%, #4b134f 100%);
-  
-  /* 背景 */
   --bg-gradient: linear-gradient(135deg, #eacda3 0%, #d6ae7b 100%);
   --card-bg: rgba(255, 255, 255, 0.95);
-  
   --text-color: #2c3e50;
   --teacher-color: #c0392b;
   --shadow-rich: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
@@ -36,7 +30,6 @@ html, body {
 
 #root { width: 100%; min-height: 100vh; }
 
-/* コンテナ */
 .container {
   display: flex;
   flex-direction: column;
@@ -56,7 +49,7 @@ html, body {
 }
 .mute-button:active { transform: scale(0.9); }
 
-/* タイトル */
+/* タイトル：修正版 */
 h1 {
   font-size: clamp(1.8rem, 7vw, 2.5rem);
   font-weight: 900;
@@ -66,8 +59,15 @@ h1 {
   line-height: 1.2;
   letter-spacing: 0.05em;
   flex-shrink: 0;
-  -webkit-text-stroke: 1.5px #fff;
-  text-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+
+  /* 変な線を消すためにstrokeを0にする */
+  -webkit-text-stroke: 0;
+  
+  /* 影で白いフチを作る */
+  text-shadow: 
+    2px 2px 0 #fff, -2px -2px 0 #fff, -2px 2px 0 #fff, 2px -2px 0 #fff,
+    2px 0 0 #fff, -2px 0 0 #fff, 0 2px 0 #fff, 0 -2px 0 #fff,
+    0 5px 15px rgba(0,0,0,0.3);
 }
 
 h2 { 
@@ -101,13 +101,12 @@ h2 {
 .fade-in { animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-/* ★修正：カウントダウンのアニメーション調整 */
+/* カウントダウン */
 .countdown-overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000;
 }
 .countdown-number {
   font-size: 8rem; color: #fff; font-weight: 900; text-shadow: 0 0 20px rgba(255, 165, 0, 0.8);
-  /* infiniteを削除し、一回だけ再生するように変更 */
   animation: popIn 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 @keyframes popIn { 
@@ -178,7 +177,7 @@ button {
 button:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
 button:active { transform: translateY(1px); box-shadow: 0 3px 10px rgba(0,0,0,0.2); }
 
-/* ★修正：ボタンの色を確実に適用 */
+/* ボタン色 */
 .btn-primary { 
   background: var(--btn-primary-grad) !important; 
   color: white !important; 
