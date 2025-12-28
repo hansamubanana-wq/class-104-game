@@ -154,7 +154,6 @@ function App() {
 
   // --- ゲーム開始 ---
   const startNormalGame = (mode, count) => {
-    // 座席モードの場合は強制的に seat メソッドにする
     const method = mode === 'seat' ? 'seat' : inputMethod;
     setPendingGameSettings({ targetStudents: students, mode, count, random: true, practice: false, method });
     startCountdown();
@@ -167,7 +166,6 @@ function App() {
     
     if(targets.length === 0) return alert("生徒を選んでください");
     
-    // 座席モードの場合は強制的に seat メソッドにする
     const method = mode === 'seat' ? 'seat' : inputMethod;
     setPendingGameSettings({ targetStudents: targets, mode, count: targets.length, random: isRandomOrder, practice: true, method });
     startCountdown();
@@ -185,10 +183,9 @@ function App() {
     setTargetCount(count);
     setIsRandomOrder(random);
     setIsPractice(practice);
-    setInputMethod(method); // モードに応じて入力方法をセット
+    setInputMethod(method);
     
     let list = [...targetStudents];
-    // 番号モードと座席モードは先生除外
     if (mode === 'id' || mode === 'seat') {
       list = list.filter(s => s.id !== 37);
     }
@@ -284,9 +281,7 @@ function App() {
     checkAnswer(val, true);
   };
 
-  // 座席クリック時のハンドラ
   const handleSeatClick = (seatId) => {
-    // 答えはIDの文字列として渡す
     checkAnswer(seatId.toString(), true);
   };
 
@@ -294,7 +289,6 @@ function App() {
     let isCorrect = false;
     let isPartialMatch = false;
 
-    // 座席モードの正解データはID
     let targetRaw = "";
     if (gameMode === 'id' || gameMode === 'seat') targetRaw = currentStudent.id.toString();
     else if (gameMode === 'name') targetRaw = currentStudent.name;
@@ -302,7 +296,6 @@ function App() {
     
     const cleanTarget = targetRaw.replace(/\s+/g, '');
     
-    // 入力データの正規化
     let cleanVal = val.replace(/\s+/g, '');
     if (gameMode === 'reading' && !isButton) {
       cleanVal = toHiragana(val).replace(/\s+/g, ''); 
@@ -385,7 +378,6 @@ function App() {
 
   const getQuestionText = () => {
     if (!currentStudent) return "";
-    // 座席モードも名前を表示して場所を当てさせる
     if (gameMode === 'id' || gameMode === 'seat') {
       return isTeacher(currentStudent.id) ? "Teacher" : currentStudent.name;
     }
@@ -600,19 +592,24 @@ function App() {
             </h2>
           </div>
 
-          {/* 入力エリアの分岐: 座席モードか、4択か、入力か */}
+          {/* 入力エリアの分岐 */}
           {gameMode === 'seat' ? (
             <div className={`game-seat-grid ${isShake ? 'shake' : ''}`}>
-              {/* 先生を除外して1-36を表示 */}
-              {students.filter(s => s.id !== 37).map(s => (
-                <button 
-                  key={s.id} 
-                  className="game-seat-item" 
-                  onClick={() => handleSeatClick(s.id)}
-                >
-                  {s.id}
-                </button>
-              ))}
+              {students.filter(s => s.id !== 37).map(s => {
+                // ★修正：正解済みの席は名前を表示し、クリック不可にする
+                const isCompleted = completedIds.includes(s.id);
+                return (
+                  <button 
+                    key={s.id} 
+                    className={`game-seat-item ${isCompleted ? 'completed' : ''}`} 
+                    onClick={() => !isCompleted && handleSeatClick(s.id)}
+                    disabled={isCompleted}
+                  >
+                    {/* 正解済みなら名字、そうでなければ番号 */}
+                    {isCompleted ? s.name.split(' ')[0] : s.id}
+                  </button>
+                )
+              })}
             </div>
           ) : inputMethod === 'typing' ? (
             <div className={`input-area ${isShake ? 'shake' : ''}`}>
