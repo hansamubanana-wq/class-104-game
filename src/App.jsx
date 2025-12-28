@@ -29,8 +29,8 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   
   // ゲーム設定
-  const [gameMode, setGameMode] = useState('reading');
-  const [inputMethod, setInputMethod] = useState('typing');
+  const [gameMode, setGameMode] = useState('reading'); // 'reading', 'name', 'id', 'seat'
+  const [inputMethod, setInputMethod] = useState('typing'); // 'typing', 'choice', 'seat'
   const [targetCount, setTargetCount] = useState(10);
   const [isRandomOrder, setIsRandomOrder] = useState(true);
   const [isPractice, setIsPractice] = useState(false);
@@ -123,10 +123,10 @@ function App() {
 
   // 4択生成
   useEffect(() => {
-    if (screen === 'game' && currentStudent && inputMethod === 'choice') {
+    if (screen === 'game' && currentStudent && inputMethod === 'choice' && gameMode !== 'seat') {
       generateChoicesForStudent(currentStudent);
     }
-  }, [currentStudent, screen, inputMethod]);
+  }, [currentStudent, screen, inputMethod, gameMode]);
 
   const playSoundSafe = (type) => {
     if (!isMuted) playSound(type);
@@ -154,7 +154,9 @@ function App() {
 
   // --- ゲーム開始 ---
   const startNormalGame = (mode, count) => {
-    setPendingGameSettings({ targetStudents: students, mode, count, random: true, practice: false });
+    // 座席モードの場合は強制的に seat メソッドにする
+    const method = mode === 'seat' ? 'seat' : inputMethod;
+    setPendingGameSettings({ targetStudents: students, mode, count, random: true, practice: false, method });
     startCountdown();
   };
 
@@ -165,7 +167,9 @@ function App() {
     
     if(targets.length === 0) return alert("生徒を選んでください");
     
-    setPendingGameSettings({ targetStudents: targets, mode, count: targets.length, random: isRandomOrder, practice: true });
+    // 座席モードの場合は強制的に seat メソッドにする
+    const method = mode === 'seat' ? 'seat' : inputMethod;
+    setPendingGameSettings({ targetStudents: targets, mode, count: targets.length, random: isRandomOrder, practice: true, method });
     startCountdown();
   }
 
@@ -176,14 +180,18 @@ function App() {
   };
 
   const startRealGame = () => {
-    const { targetStudents, mode, count, random, practice } = pendingGameSettings;
+    const { targetStudents, mode, count, random, practice, method } = pendingGameSettings;
     setGameMode(mode);
     setTargetCount(count);
     setIsRandomOrder(random);
     setIsPractice(practice);
+    setInputMethod(method); // モードに応じて入力方法をセット
     
     let list = [...targetStudents];
-    if (mode === 'id') list = list.filter(s => s.id !== 37);
+    // 番号モードと座席モードは先生除外
+    if (mode === 'id' || mode === 'seat') {
+      list = list.filter(s => s.id !== 37);
+    }
     if (list.length === 0) {
       alert("出題対象がいません");
       setScreen('start');
@@ -214,7 +222,6 @@ function App() {
   };
 
   const nextQuestion = (newCompletedIds) => {
-    // ★修正：目標数に達するか、問題リストを全て消化したら終了（先生除外時のバグ修正）
     if (newCompletedIds.length >= targetCount || newCompletedIds.length >= questionList.length) {
       finishGame();
       return;
@@ -277,20 +284,29 @@ function App() {
     checkAnswer(val, true);
   };
 
+  // 座席クリック時のハンドラ
+  const handleSeatClick = (seatId) => {
+    // 答えはIDの文字列として渡す
+    checkAnswer(seatId.toString(), true);
+  };
+
   const checkAnswer = (val, isButton) => {
     let isCorrect = false;
     let isPartialMatch = false;
 
-    const cleanVal = gameMode === 'reading' && !isButton 
-      ? toHiragana(val).replace(/\s+/g, '') 
-      : val.replace(/\s+/g, '');
-
+    // 座席モードの正解データはID
     let targetRaw = "";
-    if (gameMode === 'id') targetRaw = currentStudent.id.toString();
+    if (gameMode === 'id' || gameMode === 'seat') targetRaw = currentStudent.id.toString();
     else if (gameMode === 'name') targetRaw = currentStudent.name;
     else targetRaw = currentStudent.reading;
     
     const cleanTarget = targetRaw.replace(/\s+/g, '');
+    
+    // 入力データの正規化
+    let cleanVal = val.replace(/\s+/g, '');
+    if (gameMode === 'reading' && !isButton) {
+      cleanVal = toHiragana(val).replace(/\s+/g, ''); 
+    }
 
     if (cleanVal === cleanTarget) {
       isCorrect = true;
@@ -334,6 +350,8 @@ function App() {
     let modeStr = 'ひらがな';
     if(gameMode === 'name') modeStr = '漢字';
     if(gameMode === 'id') modeStr = '番号';
+    if(gameMode === 'seat') modeStr = '座席';
+    
     const typeStr = isPractice ? '練習' : `${targetCount}人モード`;
     const rankStr = rankResult ? `【ランク${rankResult}】` : '';
     
@@ -367,7 +385,8 @@ function App() {
 
   const getQuestionText = () => {
     if (!currentStudent) return "";
-    if (gameMode === 'id') {
+    // 座席モードも名前を表示して場所を当てさせる
+    if (gameMode === 'id' || gameMode === 'seat') {
       return isTeacher(currentStudent.id) ? "Teacher" : currentStudent.name;
     }
     return isTeacher(currentStudent.id) ? "Teacher" : `${currentStudent.id}番`;
@@ -400,19 +419,21 @@ function App() {
           <div className="menu-buttons">
             <div className="section-group">
               <h3>⚡️ サクッと (10問)</h3>
-              <div className="button-row three-cols">
+              <div className="button-row four-cols">
                 <button onClick={() => startNormalGame('reading', 10)} className="btn-primary">ひらがな</button>
                 <button onClick={() => startNormalGame('name', 10)} className="btn-secondary">漢字</button>
                 <button onClick={() => startNormalGame('id', 10)} className="btn-outline">番号</button>
+                <button onClick={() => startNormalGame('seat', 10)} className="btn-outline">座席</button>
               </div>
             </div>
 
             <div className="section-group">
               <h3>🔥 全員 (37問)</h3>
-              <div className="button-row three-cols">
+              <div className="button-row four-cols">
                 <button onClick={() => startNormalGame('reading', 37)} className="btn-primary">ひらがな</button>
                 <button onClick={() => startNormalGame('name', 37)} className="btn-secondary">漢字</button>
                 <button onClick={() => startNormalGame('id', 37)} className="btn-outline">番号</button>
+                <button onClick={() => startNormalGame('seat', 37)} className="btn-outline">座席</button>
               </div>
             </div>
 
@@ -428,9 +449,11 @@ function App() {
                 <button className={rankingTab === '10-reading' ? 'active' : ''} onClick={()=>setRankingTab('10-reading')}>10ひ</button>
                 <button className={rankingTab === '10-name' ? 'active' : ''} onClick={()=>setRankingTab('10-name')}>10漢</button>
                 <button className={rankingTab === '10-id' ? 'active' : ''} onClick={()=>setRankingTab('10-id')}>10番</button>
+                <button className={rankingTab === '10-seat' ? 'active' : ''} onClick={()=>setRankingTab('10-seat')}>10席</button>
                 <button className={rankingTab === '37-reading' ? 'active' : ''} onClick={()=>setRankingTab('37-reading')}>全ひ</button>
                 <button className={rankingTab === '37-name' ? 'active' : ''} onClick={()=>setRankingTab('37-name')}>全漢</button>
                 <button className={rankingTab === '37-id' ? 'active' : ''} onClick={()=>setRankingTab('37-id')}>全番</button>
+                <button className={rankingTab === '37-seat' ? 'active' : ''} onClick={()=>setRankingTab('37-seat')}>全席</button>
               </div>
             </div>
             
@@ -536,10 +559,11 @@ function App() {
               ))}
             </div>
           )}
-          <div className="button-row three-cols" style={{marginTop: '1rem'}}>
+          <div className="button-row four-cols" style={{marginTop: '1rem'}}>
             <button onClick={() => executePracticeStart('reading')} className="btn-primary">ひらがな</button>
             <button onClick={() => executePracticeStart('name')} className="btn-secondary">漢字</button>
             <button onClick={() => executePracticeStart('id')} className="btn-outline">番号</button>
+            <button onClick={() => executePracticeStart('seat')} className="btn-outline">座席</button>
           </div>
           <button onClick={() => setScreen('start')} className="btn-text">戻る</button>
         </div>
@@ -548,7 +572,6 @@ function App() {
       {screen === 'game' && currentStudent && (
         <div className="game-screen fade-in">
           <div className="progress-bar-container">
-            {/* ★修正：分母を「実際の問題数」に合わせて100%になるように計算 */}
             <div 
               className="progress-bar-fill" 
               style={{ width: `${(completedIds.length / Math.min(targetCount, questionList.length)) * 100}%` }}
@@ -572,12 +595,26 @@ function App() {
           </div>
           
           <div className="question-card">
-            <h2 className={isTeacher(currentStudent.id) && gameMode !== 'id' ? "student-number teacher-mode-text" : "student-number"}>
+            <h2 className={isTeacher(currentStudent.id) && gameMode !== 'id' && gameMode !== 'seat' ? "student-number teacher-mode-text" : "student-number"}>
               {getQuestionText()}
             </h2>
           </div>
 
-          {inputMethod === 'typing' ? (
+          {/* 入力エリアの分岐: 座席モードか、4択か、入力か */}
+          {gameMode === 'seat' ? (
+            <div className={`game-seat-grid ${isShake ? 'shake' : ''}`}>
+              {/* 先生を除外して1-36を表示 */}
+              {students.filter(s => s.id !== 37).map(s => (
+                <button 
+                  key={s.id} 
+                  className="game-seat-item" 
+                  onClick={() => handleSeatClick(s.id)}
+                >
+                  {s.id}
+                </button>
+              ))}
+            </div>
+          ) : inputMethod === 'typing' ? (
             <div className={`input-area ${isShake ? 'shake' : ''}`}>
               <input
                 ref={inputRef}
@@ -613,7 +650,7 @@ function App() {
           </h2>
           <p className="sub-title">
             {isPractice ? '練習モード' : `${targetCount}人モード`} 
-            ({gameMode === 'reading' ? 'ひらがな' : gameMode === 'name' ? '漢字' : '番号'})
+            ({gameMode === 'reading' ? 'ひらがな' : gameMode === 'name' ? '漢字' : gameMode === 'id' ? '番号' : '座席'})
           </p>
           
           <div className="result-box">
