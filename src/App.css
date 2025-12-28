@@ -94,21 +94,21 @@ h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.3rem; font-we
 }
 .game-seat-item:active { transform: translateY(2px); box-shadow: none; background: #f0f0f0;}
 
-/* ★追加：正解済み座席のスタイル */
 .game-seat-item.completed {
-  background: #fbf5b7; /* ゴールド系の薄い色 */
-  color: #333;
-  font-size: 0.65rem; /* 名前が入るように小さく */
-  border-color: var(--gold-color);
-  font-weight: 900;
-  pointer-events: none; /* 誤操作防止 */
-  box-shadow: none;
-  transform: translateY(2px); /* 押された状態に見せる */
-  line-height: 1.2;
+  background: #fbf5b7; color: #333; font-size: 0.65rem; border-color: var(--gold-color); font-weight: 900; pointer-events: none; box-shadow: none; transform: translateY(2px); line-height: 1.2;
 }
 
 .pass-button { background: #fff; border: 2px solid #ccc; color: #777; padding: 0.8rem; font-size: 0.9rem; margin-top: 0.5rem; box-shadow: 0 3px 5px rgba(0,0,0,0.1); border-radius: 12px; width: 100%; font-weight: bold; transition: all 0.2s; }
 .pass-button:hover { background: #f9f9f9; color: #555; transform: translateY(-2px); }
+
+/* サブメニュー（リトライ・タイトル） */
+.sub-game-menu {
+  display: flex; gap: 10px; margin-top: 1rem; justify-content: center; border-top: 1px dashed #ddd; padding-top: 10px; width: 100%;
+}
+.icon-btn {
+  background: none; border: none; color: #999; font-size: 0.8rem; box-shadow: none; padding: 5px 10px; font-weight: normal; width: auto;
+}
+.icon-btn:hover { color: var(--primary-color); text-decoration: underline; background: none; transform: none; box-shadow: none;}
 
 /* 名簿画面 */
 .roster-screen { max-width: 95%; max-height: 85vh; overflow: hidden; }

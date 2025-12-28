@@ -241,6 +241,19 @@ function App() {
     nextQuestion(newCompletedIds);
   };
 
+  // ★追加：ゲーム中断・リトライ機能
+  const quitGame = () => {
+    setScreen('start');
+    setEndTime(null);
+    setCountdown(null);
+  };
+
+  const retryGame = () => {
+    if(confirm("最初からやり直しますか？")) {
+      startCountdown(); // 同じ設定でカウントダウンから再開
+    }
+  };
+
   const finishGame = () => {
     const end = Date.now();
     setEndTime(end);
@@ -592,11 +605,9 @@ function App() {
             </h2>
           </div>
 
-          {/* 入力エリアの分岐 */}
           {gameMode === 'seat' ? (
             <div className={`game-seat-grid ${isShake ? 'shake' : ''}`}>
               {students.filter(s => s.id !== 37).map(s => {
-                // ★修正：正解済みの席は名前を表示し、クリック不可にする
                 const isCompleted = completedIds.includes(s.id);
                 return (
                   <button 
@@ -605,7 +616,6 @@ function App() {
                     onClick={() => !isCompleted && handleSeatClick(s.id)}
                     disabled={isCompleted}
                   >
-                    {/* 正解済みなら名字、そうでなければ番号 */}
                     {isCompleted ? s.name.split(' ')[0] : s.id}
                   </button>
                 )
@@ -635,6 +645,13 @@ function App() {
           )}
 
           <button onClick={handlePass} className="pass-button">パス (+5秒)</button>
+          
+          {/* ★追加：ゲーム中断・リトライボタン */}
+          <div className="sub-game-menu">
+            <button onClick={retryGame} className="icon-btn">🔄 やり直し</button>
+            <button onClick={quitGame} className="icon-btn">🏠 タイトル</button>
+          </div>
+
           {isPractice && !isRandomOrder && !isTeacher(currentStudent.id) && <p className="hint">次は {currentStudent.id + 1}番です</p>}
         </div>
       )}
