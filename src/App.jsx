@@ -25,12 +25,16 @@ const COMBO_LIMIT = 5000;
 function App() {
   const [screen, setScreen] = useState('start');
   
-  // ★変更：設定をlocalStorageから読み込む（初期値設定）
+  // 設定読み込み
   const [isMuted, setIsMuted] = useState(() => {
     return localStorage.getItem('class104_muted') === 'true';
   });
   
-  // ゲーム設定（入力方法なども保存）
+  // ★追加：テーマ設定 ('luxury' or 'pop')
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('class104_theme') || 'luxury';
+  });
+
   const [gameMode, setGameMode] = useState('reading');
   const [inputMethod, setInputMethod] = useState(() => {
     return localStorage.getItem('class104_inputMethod') || 'typing';
@@ -42,10 +46,11 @@ function App() {
   });
   const [isPractice, setIsPractice] = useState(false);
   
-  // 設定保存用のEffect
+  // 設定保存
   useEffect(() => { localStorage.setItem('class104_muted', isMuted); }, [isMuted]);
   useEffect(() => { localStorage.setItem('class104_inputMethod', inputMethod); }, [inputMethod]);
   useEffect(() => { localStorage.setItem('class104_random', isRandomOrder); }, [isRandomOrder]);
+  useEffect(() => { localStorage.setItem('class104_theme', theme); }, [theme]); // ★テーマ保存
 
   // カウントダウン & 保留設定
   const [countdown, setCountdown] = useState(null); 
@@ -572,7 +577,8 @@ function App() {
   };
 
   return (
-    <div className="container">
+    // ★修正：テーマクラスを付与
+    <div className={`container theme-${theme}`}>
       {feedback && (
         <div className="feedback-overlay">
           <div className={`feedback-icon ${feedback}`}>
@@ -581,9 +587,15 @@ function App() {
         </div>
       )}
 
-      <button className="mute-button" onClick={() => setIsMuted(!isMuted)}>
-        {isMuted ? "🔇" : "🔊"}
-      </button>
+      {/* 設定ボタン群 */}
+      <div className="top-right-controls">
+        <button className="theme-toggle-btn" onClick={() => setTheme(theme === 'luxury' ? 'pop' : 'luxury')}>
+          {theme === 'luxury' ? '💎' : '🦄'}
+        </button>
+        <button className="mute-button" onClick={() => setIsMuted(!isMuted)}>
+          {isMuted ? "🔇" : "🔊"}
+        </button>
+      </div>
 
       <h1>104 名前当て</h1>
 
@@ -666,8 +678,8 @@ function App() {
       {screen === 'roster' && (
         <div className="roster-screen fade-in">
           <h2>座席・成績表</h2>
-          <p style={{fontSize: '0.8rem', color: '#666', marginBottom: '0.5rem'}}>
-            平均タイム: <span style={{color:'#06C755'}}>■速い(上位1/3)</span> <span style={{color:'#f1c40f'}}>■普通</span> <span style={{color:'#e74c3c'}}>■遅い(下位1/3)</span>
+          <p style={{fontSize: '0.8rem', color: 'var(--text-sub)', marginBottom: '0.5rem'}}>
+            平均タイム: <span className="legend s">■速い(上位1/3)</span> <span className="legend a">■普通</span> <span className="legend b">■遅い(下位1/3)</span>
           </p>
           <div className="classroom-layout">
             <div className="blackboard-area">
@@ -681,11 +693,11 @@ function App() {
             </div>
             
             <div className="desks-grid">
-              {students.filter(s => s.id !== 37).map((s, index) => ( // ★修正：indexを使ってアニメーション遅延
+              {students.filter(s => s.id !== 37).map((s, index) => (
                 <div 
                   key={s.id} 
                   className={`desk-item ${getMasteryClass(s.id)}`}
-                  style={{ animationDelay: `${index * 0.02}s` }} // ★パラパラ出現
+                  style={{ animationDelay: `${index * 0.02}s` }}
                 >
                   <span className="desk-id">{s.id}</span>
                   <span className="desk-name">{s.name}</span>
@@ -698,7 +710,6 @@ function App() {
         </div>
       )}
 
-      {/* (練習モード省略なし) */}
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
           <h2>練習モード設定</h2>
@@ -792,13 +803,13 @@ function App() {
 
           {gameMode === 'seat' ? (
             <div className={`game-seat-grid ${isShake ? 'shake' : ''}`}>
-              {students.filter(s => s.id !== 37).map((s, index) => { // ★修正：indexでアニメ遅延
+              {students.filter(s => s.id !== 37).map((s, index) => {
                 const isCompleted = completedIds.includes(s.id);
                 return (
                   <button 
                     key={s.id} 
                     className={`game-seat-item ${isCompleted ? 'completed' : ''}`} 
-                    style={{ animationDelay: `${index * 0.02}s` }} // ★パラパラ出現
+                    style={{ animationDelay: `${index * 0.02}s` }} 
                     onClick={() => !isCompleted && handleSeatClick(s.id)}
                     disabled={isCompleted}
                   >
