@@ -6,22 +6,45 @@
   --gold-color: #b38728;
   --btn-primary-grad: linear-gradient(135deg, #3a6073 0%, #16222a 100%);
   --btn-secondary-grad: linear-gradient(135deg, #c94b4b 0%, #4b134f 100%);
-  --bg-gradient: linear-gradient(135deg, #eacda3 0%, #d6ae7b 100%);
+  --bg-gradient: linear-gradient(-45deg, #eacda3, #d6ae7b, #c9a76d, #e0c292);
   --card-bg: rgba(255, 255, 255, 0.95);
   --text-color: #2c3e50;
   --teacher-color: #c0392b;
   --shadow-rich: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
 }
 
-/* 画面全体設定 */
+/* 画面全体設定：動く背景 */
 html, body {
   margin: 0; padding: 0; width: 100%; min-height: 100vh; min-height: -webkit-fill-available;
   font-family: "Noto Serif JP", "Hiragino Mincho ProN", serif;
-  background: var(--bg-gradient); background-size: cover; background-attachment: fixed; 
-  color: var(--text-color); overflow-x: hidden; overflow-y: auto;
+  background: var(--bg-gradient); background-size: 400% 400%; 
+  animation: gradientBG 15s ease infinite; /* ★背景を動かすアニメーション */
+  background-attachment: fixed; color: var(--text-color); overflow-x: hidden; overflow-y: auto;
 }
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 #root { width: 100%; min-height: 100vh; }
 .container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 100vh; padding: 2rem 1rem; box-sizing: border-box; }
+
+/* ⭕️❌フィードバックエフェクト */
+.feedback-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3000;
+  display: flex; justify-content: center; align-items: center;
+}
+.feedback-icon {
+  font-size: 8rem; animation: popFeedback 0.4s ease-out forwards;
+}
+.feedback-icon.correct { color: #06C755; text-shadow: 0 0 20px rgba(6, 199, 85, 0.5); }
+.feedback-icon.wrong { color: #c0392b; text-shadow: 0 0 20px rgba(192, 57, 43, 0.5); }
+@keyframes popFeedback {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.5); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
 
 /* ミュートボタン */
 .mute-button {
@@ -68,6 +91,16 @@ h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.3rem; font-we
 .combo-gauge-wrapper { width: 60px; height: 4px; background: #eee; border-radius: 2px; overflow: hidden; }
 .combo-gauge-fill { height: 100%; background: #ff9f43; transition: width 0.1s linear; }
 
+/* 問題カード：スライドアニメーション */
+.question-card-wrapper {
+  animation: slideInRight 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  width: 100%;
+}
+@keyframes slideInRight {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
 .student-number { font-size: clamp(3rem, 12vw, 4rem); margin: 0.5rem 0 1.5rem 0; color: var(--primary-color); font-weight: 900; line-height: 1.1; letter-spacing: -1px; text-shadow: 2px 2px 0px #fff, 0 5px 10px rgba(0,0,0,0.15); word-break: keep-all;}
 .teacher-mode-text { color: var(--teacher-color); font-size: clamp(3rem, 11vw, 4.5rem); letter-spacing: -1px; }
 
@@ -101,7 +134,7 @@ h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.3rem; font-we
 .pass-button { background: #fff; border: 2px solid #ccc; color: #777; padding: 0.8rem; font-size: 0.9rem; margin-top: 0.5rem; box-shadow: 0 3px 5px rgba(0,0,0,0.1); border-radius: 12px; width: 100%; font-weight: bold; transition: all 0.2s; }
 .pass-button:hover { background: #f9f9f9; color: #555; transform: translateY(-2px); }
 
-/* サブメニュー（リトライ・タイトル） */
+/* サブメニュー */
 .sub-game-menu {
   display: flex; gap: 10px; margin-top: 1rem; justify-content: center; border-top: 1px dashed #ddd; padding-top: 10px; width: 100%;
 }

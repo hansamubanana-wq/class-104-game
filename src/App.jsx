@@ -4,7 +4,7 @@ import './App.css';
 import { students } from './students';
 import { playSound } from './SoundManager';
 
-// ヘルパー：ひらがな変換
+// ヘルパー
 const toHiragana = (str) => {
   return str.replace(/[\u30a1-\u30f6]/g, function(match) {
     var chr = match.charCodeAt(0) - 0x60;
@@ -12,7 +12,6 @@ const toHiragana = (str) => {
   });
 };
 
-// ヘルパー：ランク判定
 const calculateRank = (totalTime, count) => {
   const avg = totalTime / count;
   if (avg < 1.5) return "S";
@@ -21,7 +20,6 @@ const calculateRank = (totalTime, count) => {
   return "C";
 };
 
-// 定数：コンボ猶予時間（ミリ秒）
 const COMBO_LIMIT = 5000; 
 
 function App() {
@@ -29,8 +27,8 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   
   // ゲーム設定
-  const [gameMode, setGameMode] = useState('reading'); // 'reading', 'name', 'id', 'seat'
-  const [inputMethod, setInputMethod] = useState('typing'); // 'typing', 'choice', 'seat'
+  const [gameMode, setGameMode] = useState('reading');
+  const [inputMethod, setInputMethod] = useState('typing');
   const [targetCount, setTargetCount] = useState(10);
   const [isRandomOrder, setIsRandomOrder] = useState(true);
   const [isPractice, setIsPractice] = useState(false);
@@ -51,6 +49,11 @@ function App() {
   const [isShake, setIsShake] = useState(false);
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState("0.00");
   
+  // ★追加：正誤判定エフェクト用 ('correct', 'wrong', null)
+  const [feedback, setFeedback] = useState(null);
+  // ★追加：スライドアニメーション用キー
+  const [animKey, setAnimKey] = useState(0);
+
   const [penaltyTime, setPenaltyTime] = useState(0); 
   const [questionStartTime, setQuestionStartTime] = useState(0); 
   const [questionStats, setQuestionStats] = useState([]); 
@@ -75,7 +78,7 @@ function App() {
 
   const inputRef = useRef(null);
 
-  // 全体タイマー
+  // タイマー
   useEffect(() => {
     let interval;
     if (screen === 'game' && startTime && !endTime && countdown === null) {
@@ -88,7 +91,7 @@ function App() {
     return () => clearInterval(interval);
   }, [screen, startTime, endTime, penaltyTime, countdown]);
 
-  // コンボゲージタイマー
+  // コンボゲージ
   useEffect(() => {
     let interval;
     if (screen === 'game' && combo > 0 && !endTime) {
@@ -210,12 +213,14 @@ function App() {
     setMaxCombo(0);
     setComboTimeLeft(0);
     setRankResult(null);
+    setFeedback(null); // エフェクトリセット
 
     setScreen('game');
     const now = Date.now();
     setStartTime(now);
     setQuestionStartTime(now); 
     setCurrentStudent(list[0]);
+    setAnimKey(prev => prev + 1); // アニメーションキー更新
   };
 
   const nextQuestion = (newCompletedIds) => {
@@ -226,6 +231,7 @@ function App() {
     const nextIndex = newCompletedIds.length;
     setCurrentStudent(questionList[nextIndex]);
     setQuestionStartTime(Date.now()); 
+    setAnimKey(prev => prev + 1); // 次の問題へ行くときにアニメーションを発火
   };
 
   const handlePass = () => {
@@ -241,7 +247,6 @@ function App() {
     nextQuestion(newCompletedIds);
   };
 
-  // ★追加：ゲーム中断・リトライ機能
   const quitGame = () => {
     setScreen('start');
     setEndTime(null);
@@ -250,7 +255,7 @@ function App() {
 
   const retryGame = () => {
     if(confirm("最初からやり直しますか？")) {
-      startCountdown(); // 同じ設定でカウントダウンから再開
+      startCountdown(); 
     }
   };
 
@@ -298,6 +303,14 @@ function App() {
     checkAnswer(seatId.toString(), true);
   };
 
+  // エフェクトを表示して消す関数
+  const showFeedback = (type) => {
+    setFeedback(type);
+    setTimeout(() => {
+      setFeedback(null);
+    }, 400); // 0.4秒後に消える
+  };
+
   const checkAnswer = (val, isButton) => {
     let isCorrect = false;
     let isPartialMatch = false;
@@ -324,6 +337,8 @@ function App() {
 
     if (isCorrect) {
       playSoundSafe('correct');
+      showFeedback('correct'); // ★正解エフェクト
+
       const newCombo = combo + 1;
       setCombo(newCombo);
       if (newCombo > maxCombo) setMaxCombo(newCombo);
@@ -335,12 +350,18 @@ function App() {
       const newCompletedIds = [...completedIds, currentStudent.id];
       setCompletedIds(newCompletedIds);
       setInputVal('');
+      
+      // 少し遅延させて次の問題へ（エフェクトを見せるため）
+      // ただし、テンポを損なわないよう即時更新し、エフェクトは重ねて表示する
       nextQuestion(newCompletedIds);
     } else {
       if (!isPartialMatch) {
         if (isButton || val.length > 0) {
           setIsShake(true);
-          if (isButton) playSoundSafe('dummy'); 
+          if (isButton) {
+            playSoundSafe('dummy');
+            showFeedback('wrong'); // ★不正解エフェクト（ボタンのみ）
+          }
         }
       }
     }
@@ -405,6 +426,15 @@ function App() {
 
   return (
     <div className="container">
+      {/* ★追加：フィードバックオーバーレイ（⭕️❌） */}
+      {feedback && (
+        <div className="feedback-overlay">
+          <div className={`feedback-icon ${feedback}`}>
+            {feedback === 'correct' ? '⭕' : '❌'}
+          </div>
+        </div>
+      )}
+
       <button className="mute-button" onClick={() => setIsMuted(!isMuted)}>
         {isMuted ? "🔇" : "🔊"}
       </button>
@@ -518,6 +548,7 @@ function App() {
 
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
+          {/* (練習モードのJSXは変更なしのため省略なしでそのまま記述) */}
           <h2>練習モード設定</h2>
           <div className="practice-option">
             <label>入力方法:</label>
@@ -599,10 +630,13 @@ function App() {
              <span className="timer-badge">⏱ {currentTimeDisplay}s</span>
           </div>
           
-          <div className="question-card">
-            <h2 className={isTeacher(currentStudent.id) && gameMode !== 'id' && gameMode !== 'seat' ? "student-number teacher-mode-text" : "student-number"}>
-              {getQuestionText()}
-            </h2>
+          {/* ★修正：アニメーションキーを追加して問題をスライドさせる */}
+          <div className="question-card-wrapper" key={animKey}>
+            <div className="question-card">
+              <h2 className={isTeacher(currentStudent.id) && gameMode !== 'id' && gameMode !== 'seat' ? "student-number teacher-mode-text" : "student-number"}>
+                {getQuestionText()}
+              </h2>
+            </div>
           </div>
 
           {gameMode === 'seat' ? (
@@ -646,7 +680,6 @@ function App() {
 
           <button onClick={handlePass} className="pass-button">パス (+5秒)</button>
           
-          {/* ★追加：ゲーム中断・リトライボタン */}
           <div className="sub-game-menu">
             <button onClick={retryGame} className="icon-btn">🔄 やり直し</button>
             <button onClick={quitGame} className="icon-btn">🏠 タイトル</button>
