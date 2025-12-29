@@ -1,5 +1,5 @@
 /* =========================================
-   テーマ定義: ポップ＆キュート（標準）
+   テーマ定義: ポップ＆キュート（ゆめかわ）
    ========================================= */
 :root {
   --primary-color: #ff7eb3; /* ピンク */
@@ -80,7 +80,11 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
 .countdown-number { font-size: 8rem; color: #fff; font-weight: 900; text-shadow: 0 0 20px var(--primary-color); animation: popIn 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
 
-/* 入力モードなどのトグルスイッチ（大幅修正） */
+/* =========================================
+   トグルスイッチ・入力欄の修正
+   ========================================= */
+
+/* ラベルなど */
 .input-mode-switch, .practice-option {
   margin-bottom: 1.2rem;
   display: flex;
@@ -89,27 +93,30 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
   gap: 0.5rem;
   width: 100%;
 }
-.switch-label { font-size: 0.8rem; font-weight: bold; color: var(--primary-color); }
+.switch-label, .practice-option label {
+  font-size: 0.8rem; font-weight: bold; color: var(--primary-color);
+}
 
+/* スイッチ本体（背景） */
 .switch-body, .toggle-row {
   display: flex;
-  background: #fff0f5; /* 薄いピンク背景 */
-  border: 2px solid #ffc1e3; /* 枠線を追加 */
+  background: #fff0f5; /* 薄いピンク */
+  border: 2px solid #ffc1e3; /* 枠線 */
   border-radius: 30px;
   padding: 4px;
   width: 100%;
   box-sizing: border-box;
-  justify-content: space-between; /* 均等配置 */
+  justify-content: space-between;
 }
 
-/* スイッチ内のボタン共通 */
+/* ボタン共通 */
 .switch-body button, .toggle-row button {
-  flex: 1; /* 横幅いっぱいに広げる */
-  padding: 12px 0; /* タップしやすく縦幅を増やす */
+  flex: 1;
+  padding: 12px 0;
   border-radius: 24px;
   font-size: 0.95rem;
   background: transparent;
-  color: #888; /* 非選択時はグレー */
+  color: #888;
   box-shadow: none;
   border: none;
   font-family: var(--font-main);
@@ -117,21 +124,21 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
   font-weight: bold;
 }
 
-/* 選択状態（ここをカラフルに！） */
+/* 選択状態 */
 .switch-body button.active, .toggle-row button.active {
-  background: var(--btn-primary-grad); /* テーマのグラデーション */
+  background: var(--btn-primary-grad);
   color: #fff;
   font-weight: 900;
   box-shadow: 0 4px 10px rgba(255, 126, 179, 0.4);
   transform: translateY(-1px);
 }
 
-/* 練習モードの数字入力欄（ここを可愛く！） */
+/* 数字入力欄の修正 */
 .range-inputs {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 15px; /* 入力欄の間隔 */
+  gap: 15px;
   margin: 10px 0 20px 0;
   font-weight: bold;
   color: var(--text-color);
@@ -139,9 +146,9 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
 }
 
 .range-inputs input {
-  width: 80px; /* 幅を固定 */
+  width: 80px;
   padding: 12px;
-  border: 3px solid var(--gold-color); /* テーマカラーの太い枠線 */
+  border: 3px solid var(--gold-color);
   border-radius: 16px;
   text-align: center;
   font-size: 1.3rem;
@@ -150,9 +157,8 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
   background: #fff;
   font-family: var(--font-main);
   outline: none;
-  box-shadow: 0 4px 0 rgba(0,0,0,0.05); /* プチ立体感 */
+  box-shadow: 0 4px 0 rgba(0,0,0,0.05);
   transition: all 0.2s;
-  /* ブラウザ標準のスタイルを消す */
   -moz-appearance: textfield; 
 }
 .range-inputs input::-webkit-outer-spin-button,
@@ -160,7 +166,6 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
   -webkit-appearance: none;
   margin: 0;
 }
-
 .range-inputs input:focus {
   border-color: var(--secondary-color);
   background: #f0fdff;
@@ -168,7 +173,65 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
   box-shadow: 0 6px 12px rgba(122, 252, 255, 0.3);
 }
 
-/* ゲームパーツ */
+/* =========================================
+   個別選択リストの修正
+   ========================================= */
+
+/* リスト全体の枠 */
+.select-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 2列 */
+  gap: 8px;
+  margin-top: 10px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-color) transparent;
+}
+.select-list::-webkit-scrollbar { width: 6px; }
+.select-list::-webkit-scrollbar-thumb { background-color: var(--gold-color); border-radius: 3px; }
+
+/* パネル */
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background: #fff;
+  border: 2px solid #ffd1e8;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.05);
+  text-align: left;
+}
+
+.checkbox-item input {
+  margin-right: 8px;
+  transform: scale(1.3);
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+/* 選択時のスタイル (:has対応ブラウザ用) */
+.checkbox-item:has(input:checked) {
+  background: #fff0f5;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  box-shadow: 0 2px 5px rgba(255, 126, 179, 0.3);
+  transform: translateY(-1px);
+}
+
+/* =========================================
+   ゲーム画面・UI
+   ========================================= */
+
+/* プログレスバー */
 .progress-bar-container { position: absolute; top: 0; left: 0; width: 100%; height: 8px; background: rgba(0,0,0,0.05); border-radius: 20px 20px 0 0; overflow: hidden; }
 .progress-bar-fill { height: 100%; background: var(--gold-grad); transition: width 0.4s ease; }
 .header-info { display: flex; justify-content: space-between; align-items: center; margin: 0.5rem 0 1rem 0; font-size: 0.8rem; font-weight: bold; color: #555; }
@@ -225,7 +288,7 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
 .desk-name { font-size: 0.55rem; font-weight: 900; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.1; }
 .desk-time { font-size: 0.5rem; color: #888; background: #f0f0f0; padding: 0 4px; border-radius: 6px; margin-top: 1px; font-family: monospace; letter-spacing: -0.5px;}
 
-/* マスタリー色分け (パステルカラー) */
+/* マスタリー色分け */
 .desk-item.master-s { background: #e0f7fa; border: 2px solid #80deea; } 
 .desk-item.master-s .desk-id { background: #26c6da; }
 .desk-item.master-a { background: #fff9c4; border: 2px solid #fff59d; }
