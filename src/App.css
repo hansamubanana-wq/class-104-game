@@ -2,19 +2,19 @@
    1. テーマ定義: ポップ＆キュート（ゆめかわ）
    ========================================= */
 :root {
-  --primary-color: #ff7eb3; /* メイン: ピンク */
-  --secondary-color: #7afcff; /* アクセント: 水色 */
-  --gold-grad: linear-gradient(to right, #ff9a9e, #fecfef, #feada6); /* ゲージ等 */
+  --primary-color: #ff7eb3;
+  --secondary-color: #7afcff;
+  --gold-grad: linear-gradient(to right, #ff9a9e, #fecfef, #feada6);
   --gold-color: #ff7eb3;
-  --btn-primary-grad: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); /* ボタン緑青 */
-  --btn-secondary-grad: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%); /* ボタン紫青 */
-  --bg-gradient: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fad0c4, #a18cd1, #fbc2eb); /* 背景 */
+  --btn-primary-grad: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+  --btn-secondary-grad: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%);
+  --bg-gradient: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fad0c4, #a18cd1, #fbc2eb);
   --card-bg: rgba(255, 255, 255, 0.92);
   --text-color: #555;
   --text-sub: #888;
   --teacher-color: #ff6b6b;
   --shadow-rich: 0 8px 25px -5px rgba(255, 100, 150, 0.3);
-  --font-main: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif; /* 丸文字 */
+  --font-main: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", sans-serif;
   --border-radius: 30px;
 }
 
@@ -41,7 +41,7 @@ html, body {
   width: 100%; min-height: 100vh; padding: 1rem; box-sizing: border-box; 
 }
 
-/* ⭕️❌フィードバック */
+/* フィードバック */
 .feedback-overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3000;
   display: flex; justify-content: center; align-items: center;
@@ -88,7 +88,6 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
    3. ボタン・入力フォーム・トグル
    ========================================= */
 
-/* ラベル */
 .input-mode-switch, .practice-option {
   margin-bottom: 1.2rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%;
 }
@@ -96,25 +95,21 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
   font-size: 0.8rem; font-weight: bold; color: var(--primary-color);
 }
 
-/* トグルスイッチ背景 */
 .switch-body, .toggle-row {
   display: flex; background: #fff0f5; border: 2px solid #ffc1e3; border-radius: 30px;
   padding: 4px; width: 100%; box-sizing: border-box; justify-content: space-between;
 }
 
-/* トグルボタン */
 .switch-body button, .toggle-row button {
   flex: 1; padding: 12px 0; border-radius: 24px; font-size: 0.95rem; background: transparent;
   color: #888; box-shadow: none; border: none; font-family: var(--font-main);
   transition: all 0.2s ease; font-weight: bold;
 }
-/* 選択中 */
 .switch-body button.active, .toggle-row button.active {
   background: var(--btn-primary-grad); color: #fff; font-weight: 900;
   box-shadow: 0 4px 10px rgba(255, 126, 179, 0.4); transform: translateY(-1px);
 }
 
-/* 汎用ボタン (スタートなど) */
 button { 
   border: none; padding: 0.9rem 0; font-size: 0.95rem; font-weight: 900; border-radius: 20px; 
   cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
@@ -129,7 +124,6 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 .btn-outline { background: #fff; border: 2px solid var(--primary-color); color: var(--primary-color); box-shadow: 0 3px 8px rgba(0,0,0,0.05); }
 .btn-text { background: none; color: #888; box-shadow: none; text-decoration: none; margin-top: auto; padding: 0.6rem; font-size: 0.85rem; border-bottom: 1px solid transparent; transition: all 0.3s; border: none;}
 
-/* 数字入力欄 (範囲指定) */
 .range-inputs {
   display: flex; align-items: center; justify-content: center; gap: 15px;
   margin: 10px 0 20px 0; font-weight: bold; color: var(--text-color); font-size: 1.2rem;
@@ -146,7 +140,6 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 }
 .range-inputs input::-webkit-outer-spin-button, .range-inputs input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-/* 個別選択リスト (押しやすく修正) */
 .select-list {
   display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
   max-height: 250px; overflow-y: auto; padding: 4px; width: 100%; box-sizing: border-box;
@@ -182,7 +175,6 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 .student-number { font-size: clamp(3rem, 12vw, 3.5rem); margin: 0.5rem 0 1.2rem 0; color: var(--primary-color); font-weight: 900; line-height: 1.1; letter-spacing: -1px; text-shadow: 2px 2px 0px #fff, 0 5px 10px rgba(0,0,0,0.15); word-break: keep-all;}
 .teacher-mode-text { color: var(--teacher-color); font-size: clamp(2.5rem, 10vw, 4rem); letter-spacing: -1px; }
 
-/* 入力欄（ゲーム中） */
 .input-area { width: 100%; margin-bottom: 0.8rem; display: flex; justify-content: center; }
 .input-area input { 
   width: 100%; padding: 0.8rem; font-size: 1.2rem; border: 2px solid var(--gold-color); border-radius: 16px; text-align: center; 
@@ -191,22 +183,24 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 .input-area input:focus { outline: none; background: #fff; border-color: var(--secondary-color); box-shadow: 0 0 0 3px rgba(122, 252, 255, 0.5); }
 .hint { font-size: 0.75rem; color: #888; margin-top: 0.5rem; font-style: italic; }
 
-/* 4択ボタン */
 .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-bottom: 1rem; }
 .choice-btn { background: #fff; border: 2px solid #fff; color: var(--text-color); font-size: 0.95rem; padding: 0.8rem 0; border-radius: 16px; transition: all 0.1s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .choice-btn:active { transform: translateY(4px); box-shadow: none; }
 
 /* 座席グリッド（ゲーム中・名簿共通） */
-/* ★重要：min-widthを設定して、スマホで横スクロールさせる（見切れ防止） */
+/* ★重要：見切れ防止のため、最小幅を指定し、スクロール可能にする */
 .game-seat-grid, .desks-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   grid-template-rows: repeat(6, auto);
   grid-auto-flow: column;
-  gap: 4px; padding: 2px; direction: ltr; width: 100%; box-sizing: border-box;
+  gap: 4px; padding: 4px; direction: ltr; 
+  box-sizing: border-box;
+  /* 親要素いっぱいに広げるが、最小幅を下回ったらスクロール */
+  width: 100%;
 }
-/* ゲーム中はスクロールさせず、その代わりボタンを小さくして収める方針もアリだが、
-   今回は統一して横スクロールで見切れを防ぐ */
+
+/* ゲーム中は横スクロールで見切れを防ぐ */
 .game-seat-grid { padding-bottom: 1rem; overflow-x: auto; }
 
 .game-seat-item, .desk-item {
@@ -214,19 +208,18 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
   display: flex; align-items: center; justify-content: center; flex-direction: column;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: bold; font-family: var(--font-main); color: var(--primary-color);
   font-size: 0.8rem; width: 100%; position: relative;
-  /* アニメーション */
   opacity: 0; animation: staggerPop 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
-.game-seat-item { min-height: 40px; min-width: 50px; /* ゲーム中のボタンの最低幅 */ }
+.game-seat-item { min-height: 40px; min-width: 50px; }
 .game-seat-item:active { transform: translateY(2px); box-shadow: none; }
 .game-seat-item.completed { background: #fff8e1; color: #555; font-size: 0.55rem; border: 2px solid var(--gold-color); pointer-events: none; box-shadow: none; transform: translateY(2px); line-height: 1.1; }
 
 @keyframes staggerPop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
 
-/* デスクアイテム（名簿） */
+/* 名簿用のアイテム設定 */
 .desk-item { 
   background: #fff; border: 1px solid #eee; 
-  min-height: 48px; /* 高さ確保 */
+  min-height: 50px; /* 高さ確保 */
 }
 .desk-item:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 10;}
 
@@ -252,28 +245,34 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 
 
 /* =========================================
-   5. 名簿画面 (見切れ・縮小防止対策済)
+   5. 名簿画面 (修正版：見切れ防止・スクロール対応)
    ========================================= */
 
+/* カード枠：高さを確保し、スクロールなし */
 .roster-screen { 
-  width: 100%; max-width: 100%; /* 画面いっぱいに */
-  height: 85vh; 
+  width: 100%; max-width: 100%; 
+  height: 85vh; /* 高さを固定 */
   padding: 0.5rem;
   display: flex; flex-direction: column;
-  overflow: hidden;
+  overflow: hidden; /* 中身だけスクロール */
 }
+
+/* 教室レイアウト：ここをスクロールさせる */
 .classroom-layout { 
-  flex: 1; display: flex; flex-direction: column; 
+  flex: 1; 
+  display: flex; flex-direction: column; 
   padding: 10px; 
   border: 3px solid #fff; border-radius: 20px; background: rgba(255,255,255,0.3); 
-  /* ★ここをスクロール可能にする */
+  
+  /* ★重要：スクロール対応 */
   overflow: auto; 
+  -webkit-overflow-scrolling: touch; /* 滑らかスクロール */
   scrollbar-width: thin; scrollbar-color: var(--primary-color) transparent;
 }
+
 .blackboard-area { 
-  display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem; flex-shrink: 0; 
-  /* 黒板も潰れないように最小幅指定 */
-  min-width: 350px; 
+  display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem; 
+  flex-shrink: 0; min-width: 350px; /* 潰れないように */
 }
 .blackboard { background: #607d8b; color: #fff; font-weight: 900; padding: 6px 20px; border-radius: 12px; border: 4px solid #fff; letter-spacing: 0.2em; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex: 1; font-size: 0.9rem; text-align: center; }
 .teacher-desk { background: #fff; border: 2px solid var(--teacher-color); border-radius: 12px; padding: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 70px; height: 50px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -282,11 +281,10 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 .legend { margin: 0 4px; }
 .legend.s { color: #26c6da; } .legend.a { color: #fbc02d; } .legend.b { color: #ef5350; }
 
-/* ★ここが重要：グリッドに最小幅を与えて、スマホで縮小されすぎないようにする */
+/* ★重要：座席グリッドの最小幅を確保 */
 .desks-grid {
-  /* 既存設定の上書き */
-  min-width: 500px; /* 横スクロール発生させる閾値 */
-  min-height: 450px; /* 高さも確保 */
+  min-width: 550px; /* これより狭い画面では横スクロールが発生 */
+  min-height: 450px;
   padding: 4px;
 }
 
