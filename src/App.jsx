@@ -56,12 +56,12 @@ function App() {
   const [questionStartTime, setQuestionStartTime] = useState(0); 
   const [questionStats, setQuestionStats] = useState([]); 
 
-  // コンボ・ランク・★新記録
+  // コンボ・ランク・新記録
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
   const [comboTimeLeft, setComboTimeLeft] = useState(0); 
   const [rankResult, setRankResult] = useState(null);
-  const [isNewRecord, setIsNewRecord] = useState(false); // ★追加：新記録フラグ
+  const [isNewRecord, setIsNewRecord] = useState(false);
 
   // ランキング
   const [ranking, setRanking] = useState(() => {
@@ -69,6 +69,12 @@ function App() {
     return saved ? JSON.parse(saved) : [];
   });
   const [rankingTab, setRankingTab] = useState('10-reading');
+
+  // ★追加：個人成績データ { id: { totalTime: 12.3, count: 5 }, ... }
+  const [studentStats, setStudentStats] = useState(() => {
+    const saved = localStorage.getItem('class104_stats');
+    return saved ? JSON.parse(saved) : {};
+  });
 
   // 練習モード設定
   const [practiceRange, setPracticeRange] = useState({ start: 1, end: 37 });
@@ -173,6 +179,24 @@ function App() {
     startCountdown();
   }
 
+  // ★追加：苦手な人だけの復習ゲームを開始
+  const startReviewGame = () => {
+    const weakList = getWeaknessList().map(item => item.student);
+    if (weakList.length === 0) return;
+
+    // 前回のモードを引き継ぐ
+    const method = gameMode === 'seat' ? 'seat' : inputMethod;
+    setPendingGameSettings({ 
+      targetStudents: weakList, 
+      mode: gameMode, 
+      count: weakList.length, 
+      random: true, 
+      practice: true, // 復習は練習モード扱い（記録に残さない）
+      method 
+    });
+    startCountdown();
+  };
+
   const startCountdown = () => {
     setScreen('countdown');
     setCountdown(3);
@@ -213,7 +237,7 @@ function App() {
     setComboTimeLeft(0);
     setRankResult(null);
     setFeedback(null);
-    setIsNewRecord(false); // リセット
+    setIsNewRecord(false);
 
     setScreen('game');
     const now = Date.now();
@@ -273,12 +297,10 @@ function App() {
     setRankResult(r);
 
     if (isPractice) {
-      triggerConfetti(false); // 練習は通常演出
+      triggerConfetti(false);
       return;
     }
 
-    // ★追加：新記録判定ロジック
-    // 現在のモード・人数でのベストタイムを取得
     const currentBestRecord = ranking
       .filter(rec => rec.mode === gameMode && rec.count === targetCount)
       .sort((a, b) => a.time - b.time)[0];
@@ -287,9 +309,9 @@ function App() {
     setIsNewRecord(isNewBest);
 
     if (isNewBest) {
-      triggerConfetti(true); // ★新記録なら派手に
+      triggerConfetti(true);
     } else {
-      triggerConfetti(false); // 通常
+      triggerConfetti(false);
     }
 
     const newRecord = {
@@ -325,6 +347,22 @@ function App() {
     setTimeout(() => {
       setFeedback(null);
     }, 400); 
+  };
+
+  // ★追加：統計データの更新処理
+  const updateStats = (studentId, timeTaken) => {
+    setStudentStats(prevStats => {
+      const current = prevStats[studentId] || { totalTime: 0, count: 0 };
+      const newStats = {
+        ...prevStats,
+        [studentId]: {
+          totalTime: current.totalTime + timeTaken,
+          count: current.count + 1
+        }
+      };
+      localStorage.setItem('class104_stats', JSON.stringify(newStats));
+      return newStats;
+    });
   };
 
   const checkAnswer = (val, isButton) => {
@@ -363,6 +401,11 @@ function App() {
       const timeTaken = (Date.now() - questionStartTime) / 1000;
       setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken, isPass: false }]);
       
+      // ★統計更新（練習モード以外）
+      if (!isPractice) {
+        updateStats(currentStudent.id, timeTaken);
+      }
+
       const newCompletedIds = [...completedIds, currentStudent.id];
       setCompletedIds(newCompletedIds);
       setInputVal('');
@@ -381,35 +424,22 @@ function App() {
     }
   };
 
-  // ★修正：新記録かどうかで紙吹雪の量を変える
   const triggerConfetti = (isMassive = false) => {
     if(!isMuted) playSoundSafe('clear'); 
     
     if (isMassive) {
-      // 派手な紙吹雪
       const duration = 3000;
       const end = Date.now() + duration;
       (function frame() {
         confetti({
-          particleCount: 5,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0 },
-          colors: ['#ff0', '#f00', '#0f0', '#00f'] 
+          particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#ff0', '#f00', '#0f0', '#00f'] 
         });
         confetti({
-          particleCount: 5,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1 },
-          colors: ['#ff0', '#f00', '#0f0', '#00f']
+          particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#ff0', '#f00', '#0f0', '#00f']
         });
-        if (Date.now() < end) {
-          requestAnimationFrame(frame);
-        }
+        if (Date.now() < end) requestAnimationFrame(frame);
       }());
     } else {
-      // 通常の紙吹雪
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     }
   };
@@ -444,9 +474,11 @@ function App() {
   };
 
   const resetRanking = () => {
-    if (confirm("ランキング履歴をすべて削除しますか？")) {
+    if (confirm("ランキング履歴・学習データをすべて削除しますか？")) {
       localStorage.removeItem('class104_ranking_v3');
+      localStorage.removeItem('class104_stats'); // 統計も消す
       setRanking([]);
+      setStudentStats({});
       playSoundSafe('dummy'); 
     }
   };
@@ -465,6 +497,22 @@ function App() {
     if (gameMode === 'id') return "番号を入力";
     if (gameMode === 'name') return "漢字";
     return "ひらがな";
+  };
+
+  // ★追加：マスタリーレベル判定 (平均秒数)
+  const getMasteryClass = (id) => {
+    const stat = studentStats[id];
+    if (!stat || stat.count === 0) return 'master-n'; // データなし
+    const avg = stat.totalTime / stat.count;
+    if (avg < 2.0) return 'master-s'; // 得意 (緑)
+    if (avg < 4.0) return 'master-a'; // 普通 (黄)
+    return 'master-b'; // 苦手 (赤)
+  };
+
+  const getMasteryTime = (id) => {
+    const stat = studentStats[id];
+    if (!stat || stat.count === 0) return '-';
+    return (stat.totalTime / stat.count).toFixed(1) + 's';
   };
 
   return (
@@ -516,7 +564,7 @@ function App() {
 
             <div className="sub-menu-row">
               <button onClick={() => { setIsPractice(true); setScreen('practice'); }} className="btn-outline">🔰 練習・カスタム</button>
-              <button onClick={() => setScreen('roster')} className="btn-outline">📖 名簿を見る</button>
+              <button onClick={() => setScreen('roster')} className="btn-outline">📊 座席表・成績</button>
             </div>
           </div>
 
@@ -561,7 +609,10 @@ function App() {
 
       {screen === 'roster' && (
         <div className="roster-screen fade-in">
-          <h2>座席表</h2>
+          <h2>座席・成績表</h2>
+          <p style={{fontSize: '0.8rem', color: '#666', marginBottom: '0.5rem'}}>
+            平均タイム: <span style={{color:'#06C755'}}>■速い</span> <span style={{color:'#f1c40f'}}>■普通</span> <span style={{color:'#e74c3c'}}>■遅い</span>
+          </p>
           <div className="classroom-layout">
             <div className="blackboard-area">
               <div className="blackboard">黒 板</div>
@@ -569,17 +620,17 @@ function App() {
                 <div className="teacher-desk">
                   <span className="teacher-label">Teacher</span>
                   <span className="teacher-name">{students.find(s => s.id === 37).name}</span>
-                  <span className="teacher-reading">{students.find(s => s.id === 37).reading}</span>
                 </div>
               )}
             </div>
             
             <div className="desks-grid">
               {students.filter(s => s.id !== 37).map(s => (
-                <div key={s.id} className="desk-item">
+                <div key={s.id} className={`desk-item ${getMasteryClass(s.id)}`}>
                   <span className="desk-id">{s.id}</span>
                   <span className="desk-name">{s.name}</span>
-                  <span className="desk-reading">{s.reading}</span>
+                  {/* 平均タイム表示 */}
+                  <span className="desk-time">{getMasteryTime(s.id)}</span>
                 </div>
               ))}
             </div>
@@ -731,7 +782,6 @@ function App() {
 
       {screen === 'result' && (
         <div className="result-screen fade-in">
-          {/* ★追加：NEW RECORD時の表示 */}
           {isNewRecord && <div className="new-record-badge">✨ NEW RECORD!! ✨</div>}
           
           <h2>
@@ -762,6 +812,10 @@ function App() {
                   </li>
                 ))}
               </ul>
+              {/* ★追加：苦手復習ボタン */}
+              <button onClick={startReviewGame} className="review-btn">
+                🔄 苦手な{getWeaknessList().length}人を復習する
+              </button>
             </div>
           )}
 
