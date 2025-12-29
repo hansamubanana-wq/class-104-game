@@ -580,7 +580,7 @@ function App() {
         </div>
       )}
 
-      {/* ミュートボタンのみ */}
+      {/* ミュートボタンのみ表示 */}
       <button className="mute-button" onClick={() => setIsMuted(!isMuted)}>
         {isMuted ? "🔇" : "🔊"}
       </button>
