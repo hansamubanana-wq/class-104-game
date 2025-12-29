@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react'; // ★useMemoを追加
 import confetti from 'canvas-confetti';
 import './App.css';
 import { students } from './students';
@@ -70,11 +70,46 @@ function App() {
   });
   const [rankingTab, setRankingTab] = useState('10-reading');
 
-  // ★追加：個人成績データ { id: { totalTime: 12.3, count: 5 }, ... }
+  // 個人成績データ
   const [studentStats, setStudentStats] = useState(() => {
     const saved = localStorage.getItem('class104_stats');
     return saved ? JSON.parse(saved) : {};
   });
+
+  // ★追加：相対評価用の色マップ計算 (useMemoで最適化)
+  const masteryColors = useMemo(() => {
+    // 1. データがある生徒(先生除く)のリストを作り、平均タイムを計算
+    const validStudents = students
+      .filter(s => s.id !== 37 && studentStats[s.id] && studentStats[s.id].count > 0)
+      .map(s => ({
+        id: s.id,
+        avg: studentStats[s.id].totalTime / studentStats[s.id].count
+      }));
+
+    // 2. タイムが良い順(昇順)にソート
+    validStudents.sort((a, b) => a.avg - b.avg);
+
+    // 3. 順位に基づいて色を割り当て
+    const colors = {};
+    const total = validStudents.length;
+    
+    validStudents.forEach((s, index) => {
+      // 上位 1/3
+      if (index < total / 3) {
+        colors[s.id] = 'master-s'; // 緑
+      } 
+      // 中位 1/3 (上位1/3 〜 上位2/3)
+      else if (index < (total * 2) / 3) {
+        colors[s.id] = 'master-a'; // 黄
+      } 
+      // 下位 1/3
+      else {
+        colors[s.id] = 'master-b'; // 赤
+      }
+    });
+
+    return colors;
+  }, [studentStats]); // studentStatsが更新されるたびに再計算
 
   // 練習モード設定
   const [practiceRange, setPracticeRange] = useState({ start: 1, end: 37 });
@@ -179,19 +214,17 @@ function App() {
     startCountdown();
   }
 
-  // ★追加：苦手な人だけの復習ゲームを開始
   const startReviewGame = () => {
     const weakList = getWeaknessList().map(item => item.student);
     if (weakList.length === 0) return;
 
-    // 前回のモードを引き継ぐ
     const method = gameMode === 'seat' ? 'seat' : inputMethod;
     setPendingGameSettings({ 
       targetStudents: weakList, 
       mode: gameMode, 
       count: weakList.length, 
       random: true, 
-      practice: true, // 復習は練習モード扱い（記録に残さない）
+      practice: true, 
       method 
     });
     startCountdown();
@@ -349,7 +382,6 @@ function App() {
     }, 400); 
   };
 
-  // ★追加：統計データの更新処理
   const updateStats = (studentId, timeTaken) => {
     setStudentStats(prevStats => {
       const current = prevStats[studentId] || { totalTime: 0, count: 0 };
@@ -401,7 +433,6 @@ function App() {
       const timeTaken = (Date.now() - questionStartTime) / 1000;
       setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken, isPass: false }]);
       
-      // ★統計更新（練習モード以外）
       if (!isPractice) {
         updateStats(currentStudent.id, timeTaken);
       }
@@ -474,9 +505,9 @@ function App() {
   };
 
   const resetRanking = () => {
-    if (confirm("ランキング履歴・学習データをすべて削除しますか？")) {
+    if (confirm("ランキング履歴をすべて削除しますか？")) {
       localStorage.removeItem('class104_ranking_v3');
-      localStorage.removeItem('class104_stats'); // 統計も消す
+      localStorage.removeItem('class104_stats'); 
       setRanking([]);
       setStudentStats({});
       playSoundSafe('dummy'); 
@@ -499,14 +530,12 @@ function App() {
     return "ひらがな";
   };
 
-  // ★追加：マスタリーレベル判定 (平均秒数)
+  // ★修正：相対評価マップを使ってクラスを返す
   const getMasteryClass = (id) => {
-    const stat = studentStats[id];
-    if (!stat || stat.count === 0) return 'master-n'; // データなし
-    const avg = stat.totalTime / stat.count;
-    if (avg < 2.0) return 'master-s'; // 得意 (緑)
-    if (avg < 4.0) return 'master-a'; // 普通 (黄)
-    return 'master-b'; // 苦手 (赤)
+    if (masteryColors[id]) {
+      return masteryColors[id];
+    }
+    return 'master-n'; // データなし
   };
 
   const getMasteryTime = (id) => {
@@ -611,7 +640,7 @@ function App() {
         <div className="roster-screen fade-in">
           <h2>座席・成績表</h2>
           <p style={{fontSize: '0.8rem', color: '#666', marginBottom: '0.5rem'}}>
-            平均タイム: <span style={{color:'#06C755'}}>■速い</span> <span style={{color:'#f1c40f'}}>■普通</span> <span style={{color:'#e74c3c'}}>■遅い</span>
+            平均タイム: <span style={{color:'#06C755'}}>■速い(上位1/3)</span> <span style={{color:'#f1c40f'}}>■普通</span> <span style={{color:'#e74c3c'}}>■遅い(下位1/3)</span>
           </p>
           <div className="classroom-layout">
             <div className="blackboard-area">
@@ -639,6 +668,7 @@ function App() {
         </div>
       )}
 
+      {/* (省略なしで練習モード) */}
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
           <h2>練習モード設定</h2>
@@ -812,7 +842,6 @@ function App() {
                   </li>
                 ))}
               </ul>
-              {/* ★追加：苦手復習ボタン */}
               <button onClick={startReviewGame} className="review-btn">
                 🔄 苦手な{getWeaknessList().length}人を復習する
               </button>
