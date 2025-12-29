@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'; // ★useMemoを追加
+import { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import './App.css';
 import { students } from './students';
@@ -56,12 +56,13 @@ function App() {
   const [questionStartTime, setQuestionStartTime] = useState(0); 
   const [questionStats, setQuestionStats] = useState([]); 
 
-  // コンボ・ランク・新記録
+  // コンボ・ランク・新記録・★ミス回数
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
   const [comboTimeLeft, setComboTimeLeft] = useState(0); 
   const [rankResult, setRankResult] = useState(null);
   const [isNewRecord, setIsNewRecord] = useState(false);
+  const [mistakeCount, setMistakeCount] = useState(0); // ★追加：ミス数
 
   // ランキング
   const [ranking, setRanking] = useState(() => {
@@ -76,9 +77,8 @@ function App() {
     return saved ? JSON.parse(saved) : {};
   });
 
-  // ★追加：相対評価用の色マップ計算 (useMemoで最適化)
+  // 相対評価用の色マップ
   const masteryColors = useMemo(() => {
-    // 1. データがある生徒(先生除く)のリストを作り、平均タイムを計算
     const validStudents = students
       .filter(s => s.id !== 37 && studentStats[s.id] && studentStats[s.id].count > 0)
       .map(s => ({
@@ -86,37 +86,37 @@ function App() {
         avg: studentStats[s.id].totalTime / studentStats[s.id].count
       }));
 
-    // 2. タイムが良い順(昇順)にソート
     validStudents.sort((a, b) => a.avg - b.avg);
 
-    // 3. 順位に基づいて色を割り当て
     const colors = {};
     const total = validStudents.length;
     
     validStudents.forEach((s, index) => {
-      // 上位 1/3
       if (index < total / 3) {
-        colors[s.id] = 'master-s'; // 緑
-      } 
-      // 中位 1/3 (上位1/3 〜 上位2/3)
-      else if (index < (total * 2) / 3) {
-        colors[s.id] = 'master-a'; // 黄
-      } 
-      // 下位 1/3
-      else {
-        colors[s.id] = 'master-b'; // 赤
+        colors[s.id] = 'master-s'; 
+      } else if (index < (total * 2) / 3) {
+        colors[s.id] = 'master-a'; 
+      } else {
+        colors[s.id] = 'master-b'; 
       }
     });
 
     return colors;
-  }, [studentStats]); // studentStatsが更新されるたびに再計算
+  }, [studentStats]);
 
-  // 練習モード設定
   const [practiceRange, setPracticeRange] = useState({ start: 1, end: 37 });
   const [practiceSelectIds, setPracticeSelectIds] = useState([]);
   const [practiceType, setPracticeType] = useState('range');
 
   const inputRef = useRef(null);
+
+  // ★追加：バイブレーション実行関数
+  const triggerVibrate = (pattern) => {
+    // navigator.vibrate が使える場合のみ実行
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(pattern);
+    }
+  };
 
   // タイマー
   useEffect(() => {
@@ -154,10 +154,14 @@ function App() {
     if (countdown !== null && countdown > 0) {
       timer = setTimeout(() => {
         setCountdown(countdown - 1);
-        if (countdown - 1 > 0) playSoundSafe('dummy'); 
+        if (countdown - 1 > 0) {
+          playSoundSafe('dummy'); 
+          triggerVibrate(10); // ★カウントダウン振動
+        }
       }, 1000); 
     } else if (countdown === 0) {
       playSoundSafe('dummy'); 
+      triggerVibrate(30); // ★スタート振動
       setCountdown(null);
       startRealGame();
     }
@@ -234,6 +238,7 @@ function App() {
     setScreen('countdown');
     setCountdown(3);
     playSoundSafe('dummy');
+    triggerVibrate(10);
   };
 
   const startRealGame = () => {
@@ -271,6 +276,7 @@ function App() {
     setRankResult(null);
     setFeedback(null);
     setIsNewRecord(false);
+    setMistakeCount(0); // ミス数リセット
 
     setScreen('game');
     const now = Date.now();
@@ -294,7 +300,10 @@ function App() {
   const handlePass = () => {
     if (!currentStudent) return;
     playSoundSafe('dummy'); 
+    triggerVibrate(15); // ★パス振動
     setCombo(0); 
+    setMistakeCount(prev => prev + 1); // パスもミス扱い
+    
     const timeTaken = (Date.now() - questionStartTime) / 1000;
     setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken + 5, isPass: true }]); 
     setPenaltyTime(prev => prev + 5); 
@@ -341,7 +350,9 @@ function App() {
     const isNewBest = !currentBestRecord || finalTime < currentBestRecord.time;
     setIsNewRecord(isNewBest);
 
-    if (isNewBest) {
+    // ★修正：新記録か、ノーミスなら派手に
+    const isPerfect = mistakeCount === 0;
+    if (isNewBest || isPerfect) {
       triggerConfetti(true);
     } else {
       triggerConfetti(false);
@@ -368,10 +379,14 @@ function App() {
   };
 
   const handleChoiceClick = (val) => {
+    // ★ボタン押し振動（軽め）
+    triggerVibrate(5);
     checkAnswer(val, true);
   };
 
   const handleSeatClick = (seatId) => {
+    // ★座席押し振動（軽め）
+    triggerVibrate(5);
     checkAnswer(seatId.toString(), true);
   };
 
@@ -424,6 +439,7 @@ function App() {
     if (isCorrect) {
       playSoundSafe('correct');
       showFeedback('correct');
+      triggerVibrate(15); // ★正解振動！
 
       const newCombo = combo + 1;
       setCombo(newCombo);
@@ -446,9 +462,11 @@ function App() {
       if (!isPartialMatch) {
         if (isButton || val.length > 0) {
           setIsShake(true);
+          setMistakeCount(prev => prev + 1); // ★ミス回数加算
           if (isButton) {
             playSoundSafe('dummy');
             showFeedback('wrong');
+            triggerVibrate([30, 50, 30]); // ★不正解振動（ブブッ）
           }
         }
       }
@@ -485,8 +503,9 @@ function App() {
     const typeStr = isPractice ? '練習' : `${targetCount}人モード`;
     const rankStr = rankResult ? `【ランク${rankResult}】` : '';
     const newRecStr = isNewRecord ? '【自己新！】' : '';
+    const perfectStr = mistakeCount === 0 ? '【PERFECT!!】' : '';
     
-    const text = `${newRecStr}${rankStr} 104名前当て ${typeStr}(${modeStr})を${time}秒でクリア！ MAXコンボ:${maxCombo}`;
+    const text = `${perfectStr}${newRecStr}${rankStr} 104名前当て ${typeStr}(${modeStr})を${time}秒でクリア！`;
     const url = window.location.href;
     if (platform === 'line') window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text + '\n' + url)}`, '_blank');
     if (platform === 'x') window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
@@ -530,12 +549,11 @@ function App() {
     return "ひらがな";
   };
 
-  // ★修正：相対評価マップを使ってクラスを返す
   const getMasteryClass = (id) => {
     if (masteryColors[id]) {
       return masteryColors[id];
     }
-    return 'master-n'; // データなし
+    return 'master-n'; 
   };
 
   const getMasteryTime = (id) => {
@@ -658,7 +676,6 @@ function App() {
                 <div key={s.id} className={`desk-item ${getMasteryClass(s.id)}`}>
                   <span className="desk-id">{s.id}</span>
                   <span className="desk-name">{s.name}</span>
-                  {/* 平均タイム表示 */}
                   <span className="desk-time">{getMasteryTime(s.id)}</span>
                 </div>
               ))}
@@ -668,7 +685,6 @@ function App() {
         </div>
       )}
 
-      {/* (省略なしで練習モード) */}
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
           <h2>練習モード設定</h2>
@@ -812,6 +828,8 @@ function App() {
 
       {screen === 'result' && (
         <div className="result-screen fade-in">
+          {/* ★修正：PERFECT表示追加 */}
+          {mistakeCount === 0 && <div className="perfect-badge">👑 PERFECT!! 👑</div>}
           {isNewRecord && <div className="new-record-badge">✨ NEW RECORD!! ✨</div>}
           
           <h2>
