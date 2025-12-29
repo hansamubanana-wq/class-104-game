@@ -18,7 +18,7 @@ html, body {
   margin: 0; padding: 0; width: 100%; min-height: 100vh; min-height: -webkit-fill-available;
   font-family: "Noto Serif JP", "Hiragino Mincho ProN", serif;
   background: var(--bg-gradient); background-size: 400% 400%; 
-  animation: gradientBG 15s ease infinite; /* ★背景を動かすアニメーション */
+  animation: gradientBG 15s ease infinite;
   background-attachment: fixed; color: var(--text-color); overflow-x: hidden; overflow-y: auto;
 }
 @keyframes gradientBG {
@@ -92,14 +92,8 @@ h2 { margin: 0 0 1rem 0; color: var(--primary-color); font-size: 1.3rem; font-we
 .combo-gauge-fill { height: 100%; background: #ff9f43; transition: width 0.1s linear; }
 
 /* 問題カード：スライドアニメーション */
-.question-card-wrapper {
-  animation: slideInRight 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  width: 100%;
-}
-@keyframes slideInRight {
-  from { transform: translateX(20px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
+.question-card-wrapper { animation: slideInRight 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); width: 100%; }
+@keyframes slideInRight { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
 .student-number { font-size: clamp(3rem, 12vw, 4rem); margin: 0.5rem 0 1.5rem 0; color: var(--primary-color); font-weight: 900; line-height: 1.1; letter-spacing: -1px; text-shadow: 2px 2px 0px #fff, 0 5px 10px rgba(0,0,0,0.15); word-break: keep-all;}
 .teacher-mode-text { color: var(--teacher-color); font-size: clamp(3rem, 11vw, 4.5rem); letter-spacing: -1px; }
@@ -205,6 +199,17 @@ button:active { transform: translateY(1px); box-shadow: 0 3px 10px rgba(0,0,0,0.
 /* 結果 */
 .time-display { font-size: 3.5rem; font-weight: 900; margin: 1rem 0; background: var(--gold-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 2px 2px 5px rgba(0,0,0,0.1); background-clip: text;}
 .rank-badge { display: block; font-size: 1.2rem; color: var(--gold-color); margin-bottom: 0.5rem; letter-spacing: 0.1em; text-shadow: 0 1px 2px rgba(0,0,0,0.1);}
+/* ★追加：新記録バッジ */
+.new-record-badge {
+  font-size: 1.8rem; font-weight: 900; color: #ff0055; margin-bottom: 0.5rem;
+  text-shadow: 0 0 10px rgba(255, 0, 85, 0.5), 2px 2px 0 #fff;
+  animation: pulseRecord 0.8s infinite alternate;
+}
+@keyframes pulseRecord {
+  from { transform: scale(1); text-shadow: 0 0 10px rgba(255, 0, 85, 0.5), 2px 2px 0 #fff; }
+  to { transform: scale(1.1); text-shadow: 0 0 20px rgba(255, 0, 85, 0.8), 2px 2px 0 #fff; }
+}
+
 .share-buttons { display: flex; gap: 1rem; justify-content: center; margin: 1.5rem 0; width: 100%; }
 .btn-line { background: #06C755 !important; color: white !important; width: auto; padding: 0.8rem 1.5rem; flex: 1; box-shadow: 0 5px 15px rgba(6, 199, 85, 0.3); text-shadow: none; }
 .btn-x { background: #000 !important; color: white !important; width: auto; padding: 0.8rem 1.5rem; flex: 1; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); text-shadow: none; }

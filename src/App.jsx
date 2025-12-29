@@ -49,20 +49,19 @@ function App() {
   const [isShake, setIsShake] = useState(false);
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState("0.00");
   
-  // ★追加：正誤判定エフェクト用 ('correct', 'wrong', null)
   const [feedback, setFeedback] = useState(null);
-  // ★追加：スライドアニメーション用キー
   const [animKey, setAnimKey] = useState(0);
 
   const [penaltyTime, setPenaltyTime] = useState(0); 
   const [questionStartTime, setQuestionStartTime] = useState(0); 
   const [questionStats, setQuestionStats] = useState([]); 
 
-  // コンボ関連
+  // コンボ・ランク・★新記録
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
   const [comboTimeLeft, setComboTimeLeft] = useState(0); 
   const [rankResult, setRankResult] = useState(null);
+  const [isNewRecord, setIsNewRecord] = useState(false); // ★追加：新記録フラグ
 
   // ランキング
   const [ranking, setRanking] = useState(() => {
@@ -213,14 +212,15 @@ function App() {
     setMaxCombo(0);
     setComboTimeLeft(0);
     setRankResult(null);
-    setFeedback(null); // エフェクトリセット
+    setFeedback(null);
+    setIsNewRecord(false); // リセット
 
     setScreen('game');
     const now = Date.now();
     setStartTime(now);
     setQuestionStartTime(now); 
     setCurrentStudent(list[0]);
-    setAnimKey(prev => prev + 1); // アニメーションキー更新
+    setAnimKey(prev => prev + 1);
   };
 
   const nextQuestion = (newCompletedIds) => {
@@ -231,7 +231,7 @@ function App() {
     const nextIndex = newCompletedIds.length;
     setCurrentStudent(questionList[nextIndex]);
     setQuestionStartTime(Date.now()); 
-    setAnimKey(prev => prev + 1); // 次の問題へ行くときにアニメーションを発火
+    setAnimKey(prev => prev + 1);
   };
 
   const handlePass = () => {
@@ -265,7 +265,6 @@ function App() {
     setCurrentStudent(null);
     setScreen('result');
     playSoundSafe('clear');
-    triggerConfetti();
 
     const finalTime = (end - startTime) / 1000 + penaltyTime;
     setCurrentTimeDisplay(finalTime.toFixed(2));
@@ -273,7 +272,25 @@ function App() {
     const r = calculateRank(finalTime, targetCount);
     setRankResult(r);
 
-    if (isPractice) return; 
+    if (isPractice) {
+      triggerConfetti(false); // 練習は通常演出
+      return;
+    }
+
+    // ★追加：新記録判定ロジック
+    // 現在のモード・人数でのベストタイムを取得
+    const currentBestRecord = ranking
+      .filter(rec => rec.mode === gameMode && rec.count === targetCount)
+      .sort((a, b) => a.time - b.time)[0];
+
+    const isNewBest = !currentBestRecord || finalTime < currentBestRecord.time;
+    setIsNewRecord(isNewBest);
+
+    if (isNewBest) {
+      triggerConfetti(true); // ★新記録なら派手に
+    } else {
+      triggerConfetti(false); // 通常
+    }
 
     const newRecord = {
       date: new Date().toLocaleDateString(),
@@ -303,12 +320,11 @@ function App() {
     checkAnswer(seatId.toString(), true);
   };
 
-  // エフェクトを表示して消す関数
   const showFeedback = (type) => {
     setFeedback(type);
     setTimeout(() => {
       setFeedback(null);
-    }, 400); // 0.4秒後に消える
+    }, 400); 
   };
 
   const checkAnswer = (val, isButton) => {
@@ -337,7 +353,7 @@ function App() {
 
     if (isCorrect) {
       playSoundSafe('correct');
-      showFeedback('correct'); // ★正解エフェクト
+      showFeedback('correct');
 
       const newCombo = combo + 1;
       setCombo(newCombo);
@@ -351,8 +367,6 @@ function App() {
       setCompletedIds(newCompletedIds);
       setInputVal('');
       
-      // 少し遅延させて次の問題へ（エフェクトを見せるため）
-      // ただし、テンポを損なわないよう即時更新し、エフェクトは重ねて表示する
       nextQuestion(newCompletedIds);
     } else {
       if (!isPartialMatch) {
@@ -360,16 +374,44 @@ function App() {
           setIsShake(true);
           if (isButton) {
             playSoundSafe('dummy');
-            showFeedback('wrong'); // ★不正解エフェクト（ボタンのみ）
+            showFeedback('wrong');
           }
         }
       }
     }
   };
 
-  const triggerConfetti = () => {
+  // ★修正：新記録かどうかで紙吹雪の量を変える
+  const triggerConfetti = (isMassive = false) => {
     if(!isMuted) playSoundSafe('clear'); 
-    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    
+    if (isMassive) {
+      // 派手な紙吹雪
+      const duration = 3000;
+      const end = Date.now() + duration;
+      (function frame() {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#ff0', '#f00', '#0f0', '#00f'] 
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#ff0', '#f00', '#0f0', '#00f']
+        });
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      }());
+    } else {
+      // 通常の紙吹雪
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    }
   };
 
   const shareResult = (platform) => {
@@ -381,8 +423,9 @@ function App() {
     
     const typeStr = isPractice ? '練習' : `${targetCount}人モード`;
     const rankStr = rankResult ? `【ランク${rankResult}】` : '';
+    const newRecStr = isNewRecord ? '【自己新！】' : '';
     
-    const text = `${rankStr} 104名前当て ${typeStr}(${modeStr})を${time}秒でクリア！ MAXコンボ:${maxCombo}`;
+    const text = `${newRecStr}${rankStr} 104名前当て ${typeStr}(${modeStr})を${time}秒でクリア！ MAXコンボ:${maxCombo}`;
     const url = window.location.href;
     if (platform === 'line') window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text + '\n' + url)}`, '_blank');
     if (platform === 'x') window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
@@ -426,7 +469,6 @@ function App() {
 
   return (
     <div className="container">
-      {/* ★追加：フィードバックオーバーレイ（⭕️❌） */}
       {feedback && (
         <div className="feedback-overlay">
           <div className={`feedback-icon ${feedback}`}>
@@ -548,7 +590,6 @@ function App() {
 
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
-          {/* (練習モードのJSXは変更なしのため省略なしでそのまま記述) */}
           <h2>練習モード設定</h2>
           <div className="practice-option">
             <label>入力方法:</label>
@@ -630,7 +671,6 @@ function App() {
              <span className="timer-badge">⏱ {currentTimeDisplay}s</span>
           </div>
           
-          {/* ★修正：アニメーションキーを追加して問題をスライドさせる */}
           <div className="question-card-wrapper" key={animKey}>
             <div className="question-card">
               <h2 className={isTeacher(currentStudent.id) && gameMode !== 'id' && gameMode !== 'seat' ? "student-number teacher-mode-text" : "student-number"}>
@@ -691,6 +731,9 @@ function App() {
 
       {screen === 'result' && (
         <div className="result-screen fade-in">
+          {/* ★追加：NEW RECORD時の表示 */}
+          {isNewRecord && <div className="new-record-badge">✨ NEW RECORD!! ✨</div>}
+          
           <h2>
              {rankResult && <span className="rank-badge">RANK {rankResult}</span>}
              🎉 CLEAR! 🎉
