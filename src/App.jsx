@@ -30,11 +30,6 @@ function App() {
     return localStorage.getItem('class104_muted') === 'true';
   });
   
-  // ★追加：テーマ設定 ('luxury' or 'pop')
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('class104_theme') || 'luxury';
-  });
-
   const [gameMode, setGameMode] = useState('reading');
   const [inputMethod, setInputMethod] = useState(() => {
     return localStorage.getItem('class104_inputMethod') || 'typing';
@@ -50,7 +45,6 @@ function App() {
   useEffect(() => { localStorage.setItem('class104_muted', isMuted); }, [isMuted]);
   useEffect(() => { localStorage.setItem('class104_inputMethod', inputMethod); }, [inputMethod]);
   useEffect(() => { localStorage.setItem('class104_random', isRandomOrder); }, [isRandomOrder]);
-  useEffect(() => { localStorage.setItem('class104_theme', theme); }, [theme]); // ★テーマ保存
 
   // カウントダウン & 保留設定
   const [countdown, setCountdown] = useState(null); 
@@ -577,8 +571,7 @@ function App() {
   };
 
   return (
-    // ★修正：テーマクラスを付与
-    <div className={`container theme-${theme}`}>
+    <div className="container">
       {feedback && (
         <div className="feedback-overlay">
           <div className={`feedback-icon ${feedback}`}>
@@ -587,15 +580,10 @@ function App() {
         </div>
       )}
 
-      {/* 設定ボタン群 */}
-      <div className="top-right-controls">
-        <button className="theme-toggle-btn" onClick={() => setTheme(theme === 'luxury' ? 'pop' : 'luxury')}>
-          {theme === 'luxury' ? '💎' : '🦄'}
-        </button>
-        <button className="mute-button" onClick={() => setIsMuted(!isMuted)}>
-          {isMuted ? "🔇" : "🔊"}
-        </button>
-      </div>
+      {/* ミュートボタンのみ */}
+      <button className="mute-button" onClick={() => setIsMuted(!isMuted)}>
+        {isMuted ? "🔇" : "🔊"}
+      </button>
 
       <h1>104 名前当て</h1>
 
