@@ -196,15 +196,18 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 .choice-btn { background: #fff; border: 2px solid #fff; color: var(--text-color); font-size: 0.95rem; padding: 0.8rem 0; border-radius: 16px; transition: all 0.1s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .choice-btn:active { transform: translateY(4px); box-shadow: none; }
 
-/* 座席グリッド（ゲーム中・名簿共通）★見切れ防止修正 */
+/* 座席グリッド（ゲーム中・名簿共通） */
+/* ★重要：min-widthを設定して、スマホで横スクロールさせる（見切れ防止） */
 .game-seat-grid, .desks-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  grid-template-rows: repeat(6, auto); /* 高さは自動 */
+  grid-template-rows: repeat(6, auto);
   grid-auto-flow: column;
-  gap: 3px; padding: 2px; direction: ltr; width: 100%; box-sizing: border-box;
+  gap: 4px; padding: 2px; direction: ltr; width: 100%; box-sizing: border-box;
 }
-.game-seat-grid { padding-bottom: 1rem; }
+/* ゲーム中はスクロールさせず、その代わりボタンを小さくして収める方針もアリだが、
+   今回は統一して横スクロールで見切れを防ぐ */
+.game-seat-grid { padding-bottom: 1rem; overflow-x: auto; }
 
 .game-seat-item, .desk-item {
   background: #fff; border: 1px solid #fff; border-radius: 8px; padding: 2px; 
@@ -214,14 +217,18 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
   /* アニメーション */
   opacity: 0; animation: staggerPop 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
-.game-seat-item { min-height: 40px; }
+.game-seat-item { min-height: 40px; min-width: 50px; /* ゲーム中のボタンの最低幅 */ }
 .game-seat-item:active { transform: translateY(2px); box-shadow: none; }
 .game-seat-item.completed { background: #fff8e1; color: #555; font-size: 0.55rem; border: 2px solid var(--gold-color); pointer-events: none; box-shadow: none; transform: translateY(2px); line-height: 1.1; }
 
-.desk-item { background: #fff; border: 1px solid #eee; min-height: 48px; }
-.desk-item:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 10;}
-
 @keyframes staggerPop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+
+/* デスクアイテム（名簿） */
+.desk-item { 
+  background: #fff; border: 1px solid #eee; 
+  min-height: 48px; /* 高さ確保 */
+}
+.desk-item:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 10;}
 
 .desk-id { font-size: 0.55rem; color: white; font-weight: bold; background: #ccc; border-radius: 50%; width: 14px; height: 14px; line-height: 14px; margin-bottom: 1px; font-family: sans-serif;}
 .desk-name { font-size: 0.55rem; font-weight: 900; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.1; }
@@ -245,34 +252,43 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 
 
 /* =========================================
-   5. 名簿画面 (見切れ対策済)
+   5. 名簿画面 (見切れ・縮小防止対策済)
    ========================================= */
 
 .roster-screen { 
-  max-width: 95%; height: auto; max-height: 85vh; 
-  overflow-y: auto; /* ★スクロール可能に */
+  width: 100%; max-width: 100%; /* 画面いっぱいに */
+  height: 85vh; 
   padding: 0.5rem;
-  scrollbar-width: thin; scrollbar-color: var(--primary-color) transparent;
+  display: flex; flex-direction: column;
+  overflow: hidden;
 }
 .classroom-layout { 
-  flex: 1; display: flex; flex-direction: column; overflow: visible; padding: 5px; 
-  border: 3px solid #fff; border-radius: 20px; background: rgba(255,255,255,0.3); min-height: min-content;
+  flex: 1; display: flex; flex-direction: column; 
+  padding: 10px; 
+  border: 3px solid #fff; border-radius: 20px; background: rgba(255,255,255,0.3); 
+  /* ★ここをスクロール可能にする */
+  overflow: auto; 
+  scrollbar-width: thin; scrollbar-color: var(--primary-color) transparent;
 }
-.blackboard-area { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.5rem; flex-shrink: 0; }
-.blackboard { background: #607d8b; color: #fff; font-weight: 900; padding: 4px 12px; border-radius: 12px; border: 4px solid #fff; letter-spacing: 0.2em; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex: 1; font-size: 0.85rem; }
-.teacher-desk { background: #fff; border: 2px solid var(--teacher-color); border-radius: 12px; padding: 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 60px; height: 45px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.blackboard-area { 
+  display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem; flex-shrink: 0; 
+  /* 黒板も潰れないように最小幅指定 */
+  min-width: 350px; 
+}
+.blackboard { background: #607d8b; color: #fff; font-weight: 900; padding: 6px 20px; border-radius: 12px; border: 4px solid #fff; letter-spacing: 0.2em; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex: 1; font-size: 0.9rem; text-align: center; }
+.teacher-desk { background: #fff; border: 2px solid var(--teacher-color); border-radius: 12px; padding: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 70px; height: 50px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 .teacher-label { font-size: 0.5rem; color: white; background: var(--teacher-color); padding: 1px 6px; border-radius: 10px; font-weight: bold; margin-bottom: 1px; letter-spacing: 0.05em;}
 .teacher-name { font-size: 0.65rem; font-weight: 900; color: #555; line-height: 1.1;}
 .legend { margin: 0 4px; }
 .legend.s { color: #26c6da; } .legend.a { color: #fbc02d; } .legend.b { color: #ef5350; }
 
-/* その他UI */
-.section-group { margin-bottom: 1.2rem; border-bottom: 1px dashed rgba(0,0,0,0.1); padding-bottom: 0.8rem; }
-.section-group h3 { margin: 0 0 0.6rem 0; font-size: 0.95rem; color: var(--primary-color); font-weight: 900; }
-.button-row { display: flex; gap: 0.6rem; justify-content: center; width: 100%; }
-.sub-menu-row { display: flex; gap: 0.8rem; justify-content: center; margin-top: 1.2rem; width: 100%; }
-.three-cols, .four-cols { gap: 0.4rem; }
-.three-cols button, .four-cols button { padding: 0.7rem 0; font-size: 0.8rem; }
+/* ★ここが重要：グリッドに最小幅を与えて、スマホで縮小されすぎないようにする */
+.desks-grid {
+  /* 既存設定の上書き */
+  min-width: 500px; /* 横スクロール発生させる閾値 */
+  min-height: 450px; /* 高さも確保 */
+  padding: 4px;
+}
 
 
 /* =========================================
