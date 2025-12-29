@@ -66,7 +66,7 @@ h1 {
 h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-weight: 700; border-bottom: 2px solid var(--gold-color); display: inline-block; padding-bottom: 0.3rem; }
 
 /* カード共通 */
-.start-screen, .game-screen, .result-screen, .roster-screen, .practice-screen, .ranking-screen {
+.start-screen, .game-screen, .result-screen, .roster-screen, .practice-screen {
   background: var(--card-bg); padding: 1.2rem; border-radius: var(--border-radius); 
   box-shadow: var(--shadow-rich); border: 2px solid #fff;
   width: 100%; max-width: 380px; box-sizing: border-box; text-align: center; 
@@ -80,12 +80,147 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
 .countdown-number { font-size: 8rem; color: #fff; font-weight: 900; text-shadow: 0 0 20px var(--primary-color); animation: popIn 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
 
-/* 入力モードスイッチ */
-.input-mode-switch { margin-bottom: 1.2rem; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+/* 入力モードなどのトグルスイッチ（大幅修正） */
+.input-mode-switch, .practice-option {
+  margin-bottom: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
 .switch-label { font-size: 0.8rem; font-weight: bold; color: var(--primary-color); }
-.switch-body { display: flex; background: #eee; border-radius: 20px; padding: 3px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); }
-.switch-body button { padding: 6px 14px; border-radius: 16px; font-size: 0.8rem; background: transparent; color: #666; box-shadow: none; border: none; width: auto; font-family: var(--font-main);}
-.switch-body button.active { background: #fff; color: var(--primary-color); font-weight: 900; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+.switch-body, .toggle-row {
+  display: flex;
+  background: #fff0f5; /* 薄いピンク背景 */
+  border: 2px solid #ffc1e3; /* 枠線を追加 */
+  border-radius: 30px;
+  padding: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: space-between; /* 均等配置 */
+}
+
+/* スイッチ内のボタン共通 */
+.switch-body button, .toggle-row button {
+  flex: 1; /* 横幅いっぱいに広げる */
+  padding: 12px 0; /* タップしやすく縦幅を増やす */
+  border-radius: 24px;
+  font-size: 0.95rem;
+  background: transparent;
+  color: #888; /* 非選択時はグレー */
+  box-shadow: none;
+  border: none;
+  font-family: var(--font-main);
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+
+/* 選択状態（ここをカラフルに！） */
+.switch-body button.active, .toggle-row button.active {
+  background: var(--btn-primary-grad); /* テーマのグラデーション */
+  color: #fff;
+  font-weight: 900;
+  box-shadow: 0 4px 10px rgba(255, 126, 179, 0.4);
+  transform: translateY(-1px);
+}
+
+/* 練習モードの数字入力欄（ここを可愛く！） */
+.range-inputs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px; /* 入力欄の間隔 */
+  margin: 10px 0 20px 0;
+  font-weight: bold;
+  color: var(--text-color);
+  font-size: 1.2rem;
+}
+
+.range-inputs input {
+  width: 80px; /* 幅を固定 */
+  padding: 12px;
+  border: 3px solid var(--gold-color); /* テーマカラーの太い枠線 */
+  border-radius: 16px;
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--text-color);
+  background: #fff;
+  font-family: var(--font-main);
+  outline: none;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.05); /* プチ立体感 */
+  transition: all 0.2s;
+  /* ブラウザ標準のスタイルを消す */
+  -moz-appearance: textfield; 
+}
+.range-inputs input::-webkit-outer-spin-button,
+.range-inputs input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.range-inputs input:focus {
+  border-color: var(--secondary-color);
+  background: #f0fdff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(122, 252, 255, 0.3);
+}
+
+/* =========================================
+   個別選択リストの修正
+   ========================================= */
+
+/* リスト全体の枠 */
+.select-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 2列 */
+  gap: 8px;
+  margin-top: 10px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-color) transparent;
+}
+.select-list::-webkit-scrollbar { width: 6px; }
+.select-list::-webkit-scrollbar-thumb { background-color: var(--gold-color); border-radius: 3px; }
+
+/* パネル */
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background: #fff;
+  border: 2px solid #ffd1e8;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.05);
+  text-align: left;
+}
+
+.checkbox-item input {
+  margin-right: 8px;
+  transform: scale(1.3);
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+/* 選択時のスタイル (:has対応ブラウザ用) */
+.checkbox-item:has(input:checked) {
+  background: #fff0f5;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  box-shadow: 0 2px 5px rgba(255, 126, 179, 0.3);
+  transform: translateY(-1px);
+}
 
 /* ゲームパーツ */
 .progress-bar-container { position: absolute; top: 0; left: 0; width: 100%; height: 8px; background: rgba(0,0,0,0.05); border-radius: 20px 20px 0 0; overflow: hidden; }
@@ -120,7 +255,7 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
 .game-seat-grid, .desks-grid {
   display: grid;
   grid-template-rows: repeat(6, 1fr); grid-template-columns: repeat(6, 1fr); grid-auto-flow: column;
-  gap: 2px; padding: 2px; direction: ltr; width: 100%; box-sizing: border-box;
+  gap: 4px; padding: 2px; direction: ltr; width: 100%; box-sizing: border-box;
 }
 .game-seat-grid { padding-bottom: 1rem; }
 .desks-grid { height: 100%; overflow: hidden; }
@@ -140,9 +275,9 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
 
 @keyframes staggerPop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
 
-.desk-id { font-size: 0.5rem; color: white; font-weight: bold; background: #ccc; border-radius: 50%; width: 12px; height: 12px; line-height: 12px; margin-bottom: 1px; font-family: sans-serif;}
-.desk-name { font-size: 0.5rem; font-weight: 900; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.1; }
-.desk-time { font-size: 0.45rem; color: #888; background: #f0f0f0; padding: 0 3px; border-radius: 6px; margin-top: 1px; font-family: monospace; letter-spacing: -0.5px;}
+.desk-id { font-size: 0.55rem; color: white; font-weight: bold; background: #ccc; border-radius: 50%; width: 14px; height: 14px; line-height: 14px; margin-bottom: 1px; font-family: sans-serif;}
+.desk-name { font-size: 0.55rem; font-weight: 900; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.1; }
+.desk-time { font-size: 0.5rem; color: #888; background: #f0f0f0; padding: 0 4px; border-radius: 6px; margin-top: 1px; font-family: monospace; letter-spacing: -0.5px;}
 
 /* マスタリー色分け (パステルカラー) */
 .desk-item.master-s { background: #e0f7fa; border: 2px solid #80deea; } 
@@ -162,7 +297,7 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
 .icon-btn:hover { color: var(--primary-color); text-decoration: none; transform: scale(1.1); box-shadow: none;}
 
 /* 名簿画面 */
-.roster-screen { max-width: 95%; height: auto; max-height: 90vh; overflow: hidden; padding: 1rem; }
+.roster-screen { max-width: 95%; height: auto; max-height: 90vh; overflow: hidden; padding: 0.5rem; /* パディングを削減 */ }
 .classroom-layout { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 0.3rem; border: 3px solid #fff; border-radius: 20px; background: rgba(255,255,255,0.3); }
 .blackboard-area { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.5rem; }
 .blackboard { background: #607d8b; color: #fff; font-weight: 900; padding: 4px 12px; border-radius: 12px; border: 4px solid #fff; letter-spacing: 0.2em; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex: 1; font-size: 0.85rem; }
@@ -192,22 +327,20 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 .btn-outline { background: #fff; border: 2px solid var(--primary-color); color: var(--primary-color); box-shadow: 0 3px 8px rgba(0,0,0,0.05); }
 .btn-text { background: none; color: #888; box-shadow: none; text-decoration: none; margin-top: auto; padding: 0.6rem; font-size: 0.85rem; border-bottom: 1px solid transparent; transition: all 0.3s; border: none;}
 
-/* ランキング画面 */
-.ranking-screen { margin-top: 0.8rem; background: rgba(255,255,255,0.9); border-radius: 16px; padding: 1.2rem; display: flex; flex-direction: column; min-height: 300px; width: 100%; border: 3px solid #fff; box-sizing: border-box; }
-.ranking-controls { margin-bottom: 1rem; }
-.ranking-select {
-  padding: 10px; border-radius: 12px; border: 2px solid var(--primary-color);
-  font-size: 1rem; font-weight: bold; color: var(--text-color); background: #fff;
-  width: 100%; outline: none; font-family: var(--font-main);
+/* ランキングエリア（★ドロップダウン対応） */
+.ranking-area { margin-top: 0.8rem; background: rgba(255,255,255,0.6); border-radius: 16px; padding: 0.8rem; display: flex; flex-direction: column; min-height: 140px; width: 100%; border: 2px solid #fff; box-sizing: border-box;}
+.ranking-header { margin-bottom: 0.5rem; display: flex; justify-content: center; }
+.ranking-dropdown {
+  padding: 8px; border-radius: 12px; border: 2px solid var(--primary-color); color: var(--text-color); font-family: var(--font-main); font-weight: bold; background: #fff; width: 100%; font-size: 0.9rem;
 }
 .ranking-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
-.ranking-list li { display: flex; justify-content: space-between; padding: 10px 12px; border-bottom: 1px dashed #eee; font-size: 0.9rem; transition: background 0.2s; }
-.ranking-list li.rank-1 { color: #ff9a9e; font-weight: 900; font-size: 1.1rem; background: #fff0f5; border-radius: 10px; border-bottom: none; margin-bottom: 5px;}
-.rank-num { width: 30px; text-align: left; font-style: italic; font-family: "Noto Sans JP", sans-serif;}
-.rank-time { font-family: "Noto Sans JP", monospace; font-weight: 700; font-size: 1.1rem;}
-.rank-date { font-size: 0.7rem; color: #999; font-family: "Noto Sans JP", sans-serif;}
-.no-data { font-size: 0.9rem; color: #999; padding: 20px; font-style: italic;}
-.reset-rank-btn { background: none; border: 1px solid #ddd; color: #aaa; padding: 8px; font-size: 0.7rem; margin-top: 15px; box-shadow: none; width: auto; align-self: center; border-radius: 10px; font-weight: normal;}
+.ranking-list li { display: flex; justify-content: space-between; padding: 6px 8px; border-bottom: 1px dashed rgba(0,0,0,0.05); font-size: 0.8rem; transition: background 0.2s; }
+.ranking-list li.rank-1 { color: #ff9a9e; font-weight: 900; font-size: 0.9rem; background: #fff0f5; border-radius: 10px;}
+.rank-num { width: 20px; text-align: left; font-style: italic; font-family: "Noto Sans JP", sans-serif;}
+.rank-time { font-family: "Noto Sans JP", monospace; font-weight: 700; font-size: 0.9rem;}
+.rank-date { font-size: 0.65rem; color: #999; font-family: "Noto Sans JP", sans-serif;}
+.no-data { font-size: 0.8rem; color: #999; padding: 10px; font-style: italic;}
+.reset-rank-btn { background: none; border: 1px solid #ddd; color: #aaa; padding: 5px; font-size: 0.65rem; margin-top: 8px; box-shadow: none; width: auto; align-self: center; border-radius: 10px; font-weight: normal;}
 
 /* 苦手リスト */
 .weakness-box { margin: 0.8rem 0; text-align: left; width: 100%; background: #ffebee; border-radius: 16px; padding: 0.6rem; box-sizing: border-box; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }

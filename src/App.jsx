@@ -620,9 +620,41 @@ function App() {
             <div className="sub-menu-row">
               <button onClick={() => { setIsPractice(true); setScreen('practice'); }} className="btn-outline">🔰 練習・カスタム</button>
               <button onClick={() => setScreen('roster')} className="btn-outline">📊 座席表・成績</button>
-              {/* ★追加：ランキングボタン */}
-              <button onClick={() => setScreen('ranking')} className="btn-outline">🏆 ランキング</button>
             </div>
+          </div>
+
+          <div className="ranking-area">
+            <div className="ranking-header">
+              {/* ★変更：ドロップダウンリストに変更 */}
+              <select 
+                className="ranking-dropdown" 
+                value={rankingTab} 
+                onChange={(e) => setRankingTab(e.target.value)}
+              >
+                <option value="10-reading">⚡️ 10問 - ひらがな</option>
+                <option value="10-name">⚡️ 10問 - 漢字</option>
+                <option value="10-id">⚡️ 10問 - 番号</option>
+                <option value="10-seat">⚡️ 10問 - 座席</option>
+                <option value="37-reading">🔥 全員 - ひらがな</option>
+                <option value="37-name">🔥 全員 - 漢字</option>
+                <option value="37-id">🔥 全員 - 番号</option>
+                <option value="37-seat">🔥 全員 - 座席</option>
+              </select>
+            </div>
+            
+            <ul className="ranking-list">
+              {getFilteredRanking().length === 0 && <li className="no-data">記録なし</li>}
+              {getFilteredRanking().map((r, i) => (
+                <li key={i} className={i === 0 ? 'rank-1' : ''}>
+                  <span className="rank-num">{i + 1}</span>
+                  <span className="rank-time">{r.time.toFixed(2)}s</span>
+                  <span className="rank-date">{r.date.slice(5)}</span>
+                </li>
+              ))}
+            </ul>
+            {ranking.length > 0 && (
+              <button onClick={resetRanking} className="reset-rank-btn">🗑 履歴を削除</button>
+            )}
           </div>
         </div>
       )}
@@ -670,39 +702,7 @@ function App() {
         </div>
       )}
 
-      {/* ★追加：ランキング画面（startから切り離し） */}
-      {screen === 'ranking' && (
-        <div className="ranking-screen fade-in">
-          <h2>🏆 ランキング</h2>
-          <div className="ranking-controls">
-            <select value={rankingTab} onChange={(e) => setRankingTab(e.target.value)} className="ranking-select">
-              <option value="10-reading">10問 - ひらがな</option>
-              <option value="10-name">10問 - 漢字</option>
-              <option value="10-id">10問 - 番号</option>
-              <option value="10-seat">10問 - 座席</option>
-              <option value="37-reading">全員 - ひらがな</option>
-              <option value="37-name">全員 - 漢字</option>
-              <option value="37-id">全員 - 番号</option>
-              <option value="37-seat">全員 - 座席</option>
-            </select>
-          </div>
-          <ul className="ranking-list">
-            {getFilteredRanking().length === 0 && <li className="no-data">まだ記録がありません</li>}
-            {getFilteredRanking().map((r, i) => (
-              <li key={i} className={i === 0 ? 'rank-1' : ''}>
-                <span className="rank-num">{i + 1}</span>
-                <span className="rank-time">{r.time.toFixed(2)}s</span>
-                <span className="rank-date">{r.date.slice(5)}</span>
-              </li>
-            ))}
-          </ul>
-          {ranking.length > 0 && (
-            <button onClick={resetRanking} className="reset-rank-btn">🗑 履歴を削除</button>
-          )}
-          <button onClick={() => setScreen('start')} className="btn-text">戻る</button>
-        </div>
-      )}
-
+      {/* (以下、練習モード・ゲーム画面・リザルト画面は変更なし) */}
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
           <h2>練習モード設定</h2>
