@@ -24,15 +24,29 @@ const COMBO_LIMIT = 5000;
 
 function App() {
   const [screen, setScreen] = useState('start');
-  const [isMuted, setIsMuted] = useState(false);
   
-  // ゲーム設定
+  // ★変更：設定をlocalStorageから読み込む（初期値設定）
+  const [isMuted, setIsMuted] = useState(() => {
+    return localStorage.getItem('class104_muted') === 'true';
+  });
+  
+  // ゲーム設定（入力方法なども保存）
   const [gameMode, setGameMode] = useState('reading');
-  const [inputMethod, setInputMethod] = useState('typing');
+  const [inputMethod, setInputMethod] = useState(() => {
+    return localStorage.getItem('class104_inputMethod') || 'typing';
+  });
   const [targetCount, setTargetCount] = useState(10);
-  const [isRandomOrder, setIsRandomOrder] = useState(true);
+  const [isRandomOrder, setIsRandomOrder] = useState(() => {
+    const saved = localStorage.getItem('class104_random');
+    return saved !== null ? saved === 'true' : true;
+  });
   const [isPractice, setIsPractice] = useState(false);
   
+  // 設定保存用のEffect
+  useEffect(() => { localStorage.setItem('class104_muted', isMuted); }, [isMuted]);
+  useEffect(() => { localStorage.setItem('class104_inputMethod', inputMethod); }, [inputMethod]);
+  useEffect(() => { localStorage.setItem('class104_random', isRandomOrder); }, [isRandomOrder]);
+
   // カウントダウン & 保留設定
   const [countdown, setCountdown] = useState(null); 
   const [pendingGameSettings, setPendingGameSettings] = useState(null);
@@ -56,13 +70,13 @@ function App() {
   const [questionStartTime, setQuestionStartTime] = useState(0); 
   const [questionStats, setQuestionStats] = useState([]); 
 
-  // コンボ・ランク・新記録・★ミス回数
+  // コンボ・ランク・新記録・ミス回数
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
   const [comboTimeLeft, setComboTimeLeft] = useState(0); 
   const [rankResult, setRankResult] = useState(null);
   const [isNewRecord, setIsNewRecord] = useState(false);
-  const [mistakeCount, setMistakeCount] = useState(0); // ★追加：ミス数
+  const [mistakeCount, setMistakeCount] = useState(0);
 
   // ランキング
   const [ranking, setRanking] = useState(() => {
@@ -110,9 +124,7 @@ function App() {
 
   const inputRef = useRef(null);
 
-  // ★追加：バイブレーション実行関数
   const triggerVibrate = (pattern) => {
-    // navigator.vibrate が使える場合のみ実行
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(pattern);
     }
@@ -156,12 +168,12 @@ function App() {
         setCountdown(countdown - 1);
         if (countdown - 1 > 0) {
           playSoundSafe('dummy'); 
-          triggerVibrate(10); // ★カウントダウン振動
+          triggerVibrate(10);
         }
       }, 1000); 
     } else if (countdown === 0) {
       playSoundSafe('dummy'); 
-      triggerVibrate(30); // ★スタート振動
+      triggerVibrate(30);
       setCountdown(null);
       startRealGame();
     }
@@ -276,7 +288,7 @@ function App() {
     setRankResult(null);
     setFeedback(null);
     setIsNewRecord(false);
-    setMistakeCount(0); // ミス数リセット
+    setMistakeCount(0);
 
     setScreen('game');
     const now = Date.now();
@@ -300,9 +312,9 @@ function App() {
   const handlePass = () => {
     if (!currentStudent) return;
     playSoundSafe('dummy'); 
-    triggerVibrate(15); // ★パス振動
+    triggerVibrate(15);
     setCombo(0); 
-    setMistakeCount(prev => prev + 1); // パスもミス扱い
+    setMistakeCount(prev => prev + 1);
     
     const timeTaken = (Date.now() - questionStartTime) / 1000;
     setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken + 5, isPass: true }]); 
@@ -350,7 +362,6 @@ function App() {
     const isNewBest = !currentBestRecord || finalTime < currentBestRecord.time;
     setIsNewRecord(isNewBest);
 
-    // ★修正：新記録か、ノーミスなら派手に
     const isPerfect = mistakeCount === 0;
     if (isNewBest || isPerfect) {
       triggerConfetti(true);
@@ -379,13 +390,11 @@ function App() {
   };
 
   const handleChoiceClick = (val) => {
-    // ★ボタン押し振動（軽め）
     triggerVibrate(5);
     checkAnswer(val, true);
   };
 
   const handleSeatClick = (seatId) => {
-    // ★座席押し振動（軽め）
     triggerVibrate(5);
     checkAnswer(seatId.toString(), true);
   };
@@ -439,7 +448,7 @@ function App() {
     if (isCorrect) {
       playSoundSafe('correct');
       showFeedback('correct');
-      triggerVibrate(15); // ★正解振動！
+      triggerVibrate(15);
 
       const newCombo = combo + 1;
       setCombo(newCombo);
@@ -462,11 +471,11 @@ function App() {
       if (!isPartialMatch) {
         if (isButton || val.length > 0) {
           setIsShake(true);
-          setMistakeCount(prev => prev + 1); // ★ミス回数加算
+          setMistakeCount(prev => prev + 1);
           if (isButton) {
             playSoundSafe('dummy');
             showFeedback('wrong');
-            triggerVibrate([30, 50, 30]); // ★不正解振動（ブブッ）
+            triggerVibrate([30, 50, 30]);
           }
         }
       }
@@ -672,8 +681,12 @@ function App() {
             </div>
             
             <div className="desks-grid">
-              {students.filter(s => s.id !== 37).map(s => (
-                <div key={s.id} className={`desk-item ${getMasteryClass(s.id)}`}>
+              {students.filter(s => s.id !== 37).map((s, index) => ( // ★修正：indexを使ってアニメーション遅延
+                <div 
+                  key={s.id} 
+                  className={`desk-item ${getMasteryClass(s.id)}`}
+                  style={{ animationDelay: `${index * 0.02}s` }} // ★パラパラ出現
+                >
                   <span className="desk-id">{s.id}</span>
                   <span className="desk-name">{s.name}</span>
                   <span className="desk-time">{getMasteryTime(s.id)}</span>
@@ -685,6 +698,7 @@ function App() {
         </div>
       )}
 
+      {/* (練習モード省略なし) */}
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
           <h2>練習モード設定</h2>
@@ -778,12 +792,13 @@ function App() {
 
           {gameMode === 'seat' ? (
             <div className={`game-seat-grid ${isShake ? 'shake' : ''}`}>
-              {students.filter(s => s.id !== 37).map(s => {
+              {students.filter(s => s.id !== 37).map((s, index) => { // ★修正：indexでアニメ遅延
                 const isCompleted = completedIds.includes(s.id);
                 return (
                   <button 
                     key={s.id} 
                     className={`game-seat-item ${isCompleted ? 'completed' : ''}`} 
+                    style={{ animationDelay: `${index * 0.02}s` }} // ★パラパラ出現
                     onClick={() => !isCompleted && handleSeatClick(s.id)}
                     disabled={isCompleted}
                   >
@@ -828,7 +843,6 @@ function App() {
 
       {screen === 'result' && (
         <div className="result-screen fade-in">
-          {/* ★修正：PERFECT表示追加 */}
           {mistakeCount === 0 && <div className="perfect-badge">👑 PERFECT!! 👑</div>}
           {isNewRecord && <div className="new-record-badge">✨ NEW RECORD!! ✨</div>}
           

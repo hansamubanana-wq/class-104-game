@@ -111,7 +111,7 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
 .choice-btn { background: #fff; border: 2px solid #ddd; color: var(--text-color); font-size: 0.95rem; padding: 0.8rem 0; border-radius: 12px; transition: all 0.1s; box-shadow: 0 4px 0 #ccc; }
 .choice-btn:active { transform: translateY(4px); box-shadow: none; }
 
-/* ゲーム中の座席グリッド（ここも修正して一画面に収める） */
+/* ゲーム中の座席グリッド */
 .game-seat-grid {
   display: grid;
   grid-template-rows: repeat(6, 1fr);
@@ -126,11 +126,16 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
 .game-seat-item {
   background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 0; 
   display: flex; align-items: center; justify-content: center; 
-  min-height: 40px; /* 高さを少し抑える */
+  min-height: 40px; 
   box-shadow: 0 2px 0 #ccc; font-weight: bold; font-family: "Noto Sans JP", sans-serif; color: var(--primary-color);
-  font-size: 0.8rem; /* フォントサイズ調整 */
+  font-size: 0.8rem; 
   width: 100%;
+  /* ★追加：パラパラ出現アニメーション */
+  opacity: 0;
+  animation: staggerPop 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
+@keyframes staggerPop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+
 .game-seat-item:active { transform: translateY(2px); box-shadow: none; background: #f0f0f0;}
 .game-seat-item.completed {
   background: #fbf5b7; color: #333; font-size: 0.55rem; border-color: var(--gold-color); font-weight: 900; pointer-events: none; box-shadow: none; transform: translateY(2px); line-height: 1.1;
@@ -148,10 +153,9 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
 }
 .icon-btn:hover { color: var(--primary-color); text-decoration: underline; background: none; transform: none; box-shadow: none;}
 
-/* 名簿画面（★ここを大幅修正してスクロール不要に） */
+/* 名簿画面 */
 .roster-screen { 
   max-width: 95%; 
-  /* max-height制限を外してflexで収める */
   height: auto; 
   max-height: 90vh;
   overflow: hidden; 
@@ -173,35 +177,30 @@ h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-
 .teacher-label { font-size: 0.5rem; color: white; background: var(--teacher-color); padding: 1px 6px; border-radius: 8px; font-weight: bold; margin-bottom: 1px; letter-spacing: 0.05em;}
 .teacher-name { font-size: 0.65rem; font-weight: 900; color: #333; line-height: 1.1;}
 
-/* ★グリッドの修正：完全レスポンシブ化 */
+/* グリッド */
 .desks-grid { 
   display: grid; 
-  /* 横に6つ並べる（座席表の形状を維持） */
   grid-template-columns: repeat(6, 1fr);
   grid-template-rows: repeat(6, 1fr);
-  /* 縦方向にIDが進むなら column、横なら row。ここでは元の挙動(column)に合わせる */
   grid-auto-flow: column; 
   gap: 3px; 
   padding: 2px; 
-  /* スクロールを消す */
   overflow: hidden; 
   width: 100%;
-  height: 100%; /* 親要素いっぱいに広げる */
+  height: 100%;
   box-sizing: border-box;
 }
 
 .desk-item { 
   background: #eee; border: 1px solid #ccc; border-radius: 6px; padding: 2px; 
   display: flex; flex-direction: column; align-items: center; justify-content: center; 
-  /* 固定サイズを撤廃し、グリッドに合わせて伸縮させる */
-  min-width: 0; 
-  width: 100%;
-  height: auto;
-  aspect-ratio: 1 / 0.85; /* 正方形に近い比率を維持 */
+  min-width: 0; width: 100%; height: auto; aspect-ratio: 1 / 0.85;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s; position: relative;
+  /* ★追加：パラパラ出現 */
+  opacity: 0;
+  animation: staggerPop 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 .desk-item:hover { transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.15); z-index: 10;}
-/* 文字サイズを小さくして収める */
 .desk-id { font-size: 0.55rem; color: white; font-weight: bold; background: #999; border-radius: 50%; width: 14px; height: 14px; line-height: 14px; margin-bottom: 1px; box-shadow: 0 1px 1px rgba(0,0,0,0.2); font-family: "Noto Sans JP", sans-serif;}
 .desk-name { font-size: 0.55rem; font-weight: 900; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.1; }
 .desk-time { font-size: 0.5rem; color: #555; background: rgba(255,255,255,0.8); padding: 0 3px; border-radius: 4px; margin-top: 1px; font-family: monospace; letter-spacing: -0.5px;}
