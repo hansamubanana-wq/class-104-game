@@ -19,15 +19,18 @@
 }
 
 /* =========================================
-   2. 基本レイアウト & アニメーション
+   2. 基本レイアウト
    ========================================= */
 
 html, body {
-  margin: 0; padding: 0; width: 100%; min-height: 100vh; min-height: -webkit-fill-available;
+  margin: 0; padding: 0; width: 100%; 
+  /* スマホのアドレスバー対策: dvhを使用 */
+  min-height: 100vh; min-height: 100dvh; 
   font-family: var(--font-main);
   background: var(--bg-gradient); background-size: 400% 400%; 
   animation: gradientBG 15s ease infinite;
-  background-attachment: fixed; color: var(--text-color); overflow-x: hidden; overflow-y: auto;
+  background-attachment: fixed; color: var(--text-color); 
+  overflow-x: hidden; overflow-y: auto;
 }
 @keyframes gradientBG {
   0% { background-position: 0% 50%; }
@@ -35,10 +38,13 @@ html, body {
   100% { background-position: 0% 50%; }
 }
 
-#root { width: 100%; min-height: 100vh; }
+#root { width: 100%; min-height: 100dvh; display: flex; flex-direction: column; }
+
 .container { 
   display: flex; flex-direction: column; align-items: center; justify-content: center; 
-  width: 100%; min-height: 100vh; padding: 1rem; box-sizing: border-box; 
+  width: 100%; flex: 1; padding: 1rem; box-sizing: border-box; 
+  /* 縦に見切れないよう最小高さを確保 */
+  min-height: 100dvh;
 }
 
 /* フィードバック */
@@ -69,12 +75,14 @@ h1 {
 h2 { margin: 0 0 0.8rem 0; color: var(--primary-color); font-size: 1.2rem; font-weight: 700; border-bottom: 2px solid var(--gold-color); display: inline-block; padding-bottom: 0.3rem; }
 
 /* カード共通設定 */
-.start-screen, .game-screen, .result-screen, .roster-screen, .practice-screen {
+.start-screen, .game-screen, .result-screen, .practice-screen {
   background: var(--card-bg); padding: 1.2rem; border-radius: var(--border-radius); 
   box-shadow: var(--shadow-rich); border: 2px solid #fff;
   width: 100%; max-width: 380px; box-sizing: border-box; text-align: center; 
   display: flex; flex-direction: column; position: relative; margin: 0 auto; flex-shrink: 0;
 }
+/* 名簿画面だけは別枠で定義（後述） */
+
 .fade-in { animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -187,54 +195,29 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 .choice-btn { background: #fff; border: 2px solid #fff; color: var(--text-color); font-size: 0.95rem; padding: 0.8rem 0; border-radius: 16px; transition: all 0.1s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .choice-btn:active { transform: translateY(4px); box-shadow: none; }
 
-/* 座席グリッド（ゲーム中・名簿共通） */
-/* ★重要：見切れ防止のため、最小幅を指定し、スクロール可能にする */
-.game-seat-grid, .desks-grid {
+/* ゲーム中の座席グリッド */
+.game-seat-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   grid-template-rows: repeat(6, auto);
   grid-auto-flow: column;
-  gap: 4px; padding: 4px; direction: ltr; 
-  box-sizing: border-box;
-  /* 親要素いっぱいに広げるが、最小幅を下回ったらスクロール */
-  width: 100%;
+  gap: 4px; padding: 2px; direction: ltr; box-sizing: border-box; width: 100%;
+  padding-bottom: 1rem; 
+  overflow-x: auto; /* 見切れたらスクロール */
 }
 
-/* ゲーム中は横スクロールで見切れを防ぐ */
-.game-seat-grid { padding-bottom: 1rem; overflow-x: auto; }
-
-.game-seat-item, .desk-item {
+.game-seat-item {
   background: #fff; border: 1px solid #fff; border-radius: 8px; padding: 2px; 
   display: flex; align-items: center; justify-content: center; flex-direction: column;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: bold; font-family: var(--font-main); color: var(--primary-color);
   font-size: 0.8rem; width: 100%; position: relative;
   opacity: 0; animation: staggerPop 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  min-height: 40px; min-width: 50px; 
 }
-.game-seat-item { min-height: 40px; min-width: 50px; }
 .game-seat-item:active { transform: translateY(2px); box-shadow: none; }
 .game-seat-item.completed { background: #fff8e1; color: #555; font-size: 0.55rem; border: 2px solid var(--gold-color); pointer-events: none; box-shadow: none; transform: translateY(2px); line-height: 1.1; }
 
 @keyframes staggerPop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
-
-/* 名簿用のアイテム設定 */
-.desk-item { 
-  background: #fff; border: 1px solid #eee; 
-  min-height: 50px; /* 高さ確保 */
-}
-.desk-item:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 10;}
-
-.desk-id { font-size: 0.55rem; color: white; font-weight: bold; background: #ccc; border-radius: 50%; width: 14px; height: 14px; line-height: 14px; margin-bottom: 1px; font-family: sans-serif;}
-.desk-name { font-size: 0.55rem; font-weight: 900; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.1; }
-.desk-time { font-size: 0.5rem; color: #888; background: #f0f0f0; padding: 0 4px; border-radius: 6px; margin-top: 1px; font-family: monospace; letter-spacing: -0.5px;}
-
-/* マスタリー色分け */
-.desk-item.master-s { background: #e0f7fa; border: 2px solid #80deea; } 
-.desk-item.master-s .desk-id { background: #26c6da; }
-.desk-item.master-a { background: #fff9c4; border: 2px solid #fff59d; }
-.desk-item.master-a .desk-id { background: #fbc02d; }
-.desk-item.master-b { background: #ffebee; border: 2px solid #ef9a9a; } 
-.desk-item.master-b .desk-id { background: #ef5350; }
-.desk-item.master-n { background: #f5f5f5; border: 1px solid #e0e0e0; color: #aaa; } 
 
 .pass-button { background: #fff; border: 2px solid #eee; color: #888; padding: 0.7rem; font-size: 0.85rem; margin-top: 0.5rem; box-shadow: 0 3px 5px rgba(0,0,0,0.05); border-radius: 12px; width: 100%; font-weight: bold; transition: all 0.2s; }
 .pass-button:hover { background: #fafafa; color: #555; transform: translateY(-2px); }
@@ -248,25 +231,33 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
    5. 名簿画面 (修正版：見切れ防止・スクロール対応)
    ========================================= */
 
-/* カード枠：高さを確保し、スクロールなし */
+/* カード枠：画面いっぱいに広げ、最大高さも画面サイズに追従 */
 .roster-screen { 
-  width: 100%; max-width: 100%; 
-  height: 85vh; /* 高さを固定 */
+  background: var(--card-bg); 
+  border-radius: var(--border-radius); 
+  box-shadow: var(--shadow-rich); border: 2px solid #fff;
+  width: 100%; 
+  max-width: 100%; /* 横幅制限解除 */
+  height: 85dvh; /* dvhでアドレスバー対策 */
   padding: 0.5rem;
   display: flex; flex-direction: column;
-  overflow: hidden; /* 中身だけスクロール */
+  overflow: hidden; /* 内部でスクロールさせるため */
+  box-sizing: border-box;
 }
 
 /* 教室レイアウト：ここをスクロールさせる */
 .classroom-layout { 
-  flex: 1; 
+  flex: 1; /* 残りの高さを埋める */
   display: flex; flex-direction: column; 
   padding: 10px; 
   border: 3px solid #fff; border-radius: 20px; background: rgba(255,255,255,0.3); 
   
   /* ★重要：スクロール対応 */
   overflow: auto; 
-  -webkit-overflow-scrolling: touch; /* 滑らかスクロール */
+  /* Flexアイテムの縮小を防ぎ、スクロールバーを出すための魔法のプロパティ */
+  min-height: 0; 
+  
+  -webkit-overflow-scrolling: touch; 
   scrollbar-width: thin; scrollbar-color: var(--primary-color) transparent;
 }
 
@@ -281,12 +272,28 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 .legend { margin: 0 4px; }
 .legend.s { color: #26c6da; } .legend.a { color: #fbc02d; } .legend.b { color: #ef5350; }
 
-/* ★重要：座席グリッドの最小幅を確保 */
+/* 座席グリッド：名簿用 */
 .desks-grid {
-  min-width: 550px; /* これより狭い画面では横スクロールが発生 */
-  min-height: 450px;
-  padding: 4px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  grid-auto-flow: column;
+  gap: 4px; padding: 4px; 
+  
+  /* ★重要：最小幅と高さを指定して、スマホで縮小されすぎないようにする */
+  min-width: 600px; /* 横スクロール発生させる */
+  min-height: 500px; 
 }
+
+.desk-item {
+  background: #fff; border: 1px solid #fff; border-radius: 8px; padding: 2px; 
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: relative;
+  transition: transform 0.2s; opacity: 0; animation: staggerPop 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  /* サイズ確保 */
+  width: 100%; height: 100%;
+}
+.desk-item:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 10;}
 
 
 /* =========================================
@@ -297,7 +304,7 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 .ranking-header { margin-bottom: 0.5rem; display: flex; justify-content: center; }
 /* ドロップダウン */
 .ranking-dropdown {
-  padding: 8px; border-radius: 12px; border: 2px solid var(--primary-color); color: var(--text-color); font-family: var(--font-main); font-weight: bold; background: #fff; width: 100%; font-size: 0.9rem; outline: none;
+  padding: 10px; border-radius: 12px; border: 2px solid var(--primary-color); color: var(--text-color); font-family: var(--font-main); font-weight: bold; background: #fff; width: 100%; font-size: 0.9rem; outline: none; cursor: pointer;
 }
 .ranking-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
 .ranking-list li { display: flex; justify-content: space-between; padding: 6px 8px; border-bottom: 1px dashed rgba(0,0,0,0.05); font-size: 0.8rem; transition: background 0.2s; }
