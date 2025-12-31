@@ -31,9 +31,14 @@ function App() {
   });
   
   const [gameMode, setGameMode] = useState('reading');
+  
+  // ★修正：初期値を確実に 'typing' (キーボード) にする
   const [inputMethod, setInputMethod] = useState(() => {
-    return localStorage.getItem('class104_inputMethod') || 'typing';
+    const saved = localStorage.getItem('class104_inputMethod');
+    // 保存データが 'choice' の時だけ choice にし、それ以外（初回など）はすべて typing にする
+    return saved === 'choice' ? 'choice' : 'typing';
   });
+
   const [targetCount, setTargetCount] = useState(10);
   const [isRandomOrder, setIsRandomOrder] = useState(() => {
     const saved = localStorage.getItem('class104_random');
@@ -155,7 +160,7 @@ function App() {
     return () => clearInterval(interval);
   }, [screen, startTime, endTime, penaltyTime, countdown]);
 
-  // コンボゲージ（サドンデスではコンボ切れは許容するが、ミス扱いにはしない）
+  // コンボゲージ
   useEffect(() => {
     let interval;
     if (screen === 'game' && combo > 0 && !endTime) {
@@ -233,7 +238,7 @@ function App() {
     startCountdown();
   };
 
-  // ★追加：サドンデス開始
+  // サドンデス開始
   const startSuddenDeathGame = (mode) => {
     const method = mode === 'seat' ? 'seat' : inputMethod;
     setPendingGameSettings({ 
@@ -243,7 +248,7 @@ function App() {
       random: true, 
       practice: false, 
       method, 
-      suddenDeath: true // フラグON
+      suddenDeath: true 
     });
     startCountdown();
   };
@@ -294,8 +299,8 @@ function App() {
     setIsRandomOrder(random);
     setIsPractice(practice);
     setInputMethod(method);
-    setIsSuddenDeath(!!suddenDeath); // サドンデスフラグ設定
-    setIsGameOver(false); // ゲームオーバー状態リセット
+    setIsSuddenDeath(!!suddenDeath);
+    setIsGameOver(false);
     
     let list = [...targetStudents];
     if (mode === 'id' || mode === 'seat') {
@@ -345,20 +350,19 @@ function App() {
     setAnimKey(prev => prev + 1);
   };
 
-  // ★追加：ゲームオーバー処理
+  // ゲームオーバー処理
   const triggerGameOver = () => {
     const end = Date.now();
     setEndTime(end);
     setIsGameOver(true);
     setScreen('result');
-    playSoundSafe('dummy'); // 残念な音の代わりにダミー音
-    triggerVibrate([50, 100, 50, 100, 50]); // 長めの振動
+    playSoundSafe('dummy'); 
+    triggerVibrate([50, 100, 50, 100, 50]); 
   };
 
   const handlePass = () => {
     if (!currentStudent) return;
     
-    // ★サドンデスなら即死
     if (isSuddenDeath) {
       triggerGameOver();
       return;
@@ -408,7 +412,6 @@ function App() {
       return;
     }
 
-    // サドンデス完走は記録に残す（通常モードと同じ扱い）
     const currentBestRecord = ranking
       .filter(rec => rec.mode === gameMode && rec.count === targetCount)
       .sort((a, b) => a.time - b.time)[0];
@@ -512,7 +515,6 @@ function App() {
       const timeTaken = (Date.now() - questionStartTime) / 1000;
       setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken, isPass: false }]);
       
-      // 練習でなければ統計保存
       if (!isPractice) {
         updateStats(currentStudent.id, timeTaken);
       }
@@ -520,15 +522,11 @@ function App() {
       const newCompletedIds = [...completedIds, currentStudent.id];
       setCompletedIds(newCompletedIds);
       
-      // ★修正：useEffectでクリアされるが、念のためここでも
-      // setInputVal(''); 
-      
       nextQuestion(newCompletedIds);
     } else {
       if (!isPartialMatch) {
         if (isButton || val.length > 0) {
           
-          // ★サドンデスなら即死
           if (isSuddenDeath) {
             triggerGameOver();
             return;
@@ -567,7 +565,7 @@ function App() {
   };
 
   const shareResult = (platform) => {
-    if (isGameOver) return; // ゲームオーバー時はシェアなし（あるいは失敗シェア）
+    if (isGameOver) return;
 
     const time = currentTimeDisplay;
     let modeStr = 'ひらがな';
@@ -685,7 +683,7 @@ function App() {
               </div>
             </div>
 
-            {/* ★追加：サドンデスモード */}
+            {/* サドンデスモード */}
             <div className="section-group">
               <h3 style={{color:'#d63031'}}>💀 サドンデス (一発退場)</h3>
               <div className="button-row four-cols">
@@ -780,6 +778,7 @@ function App() {
         </div>
       )}
 
+      {/* 練習モード */}
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
           <h2>練習モード設定</h2>
@@ -850,7 +849,6 @@ function App() {
           <div className="header-info">
              <span className="progress">残り: {Math.min(targetCount, questionList.length) - completedIds.length} 人</span>
              <div className="combo-container">
-               {/* サドンデス時は専用バッジ */}
                {isSuddenDeath ? <span className="sudden-death-badge">💀 SUDDEN DEATH</span> : (combo > 1 && <span className="combo-badge">🔥 {combo} COMBO!</span>)}
                
                {!isSuddenDeath && combo > 0 && (
@@ -926,7 +924,6 @@ function App() {
 
       {screen === 'result' && (
         <div className="result-screen fade-in">
-          {/* ゲームオーバー時の表示 */}
           {isGameOver && (
             <div className="game-over-container">
               <h2 className="game-over-title">💀 GAME OVER 💀</h2>
@@ -957,7 +954,6 @@ function App() {
             </div>
           )}
 
-          {/* ゲームオーバー時はシェアも復習もなし、タイトルへ */}
           {!isGameOver && getWeaknessList().length > 0 && (
             <div className="weakness-box">
               <h3>🐢 時間がかかった人</h3>
