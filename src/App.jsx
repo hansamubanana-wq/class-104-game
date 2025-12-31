@@ -41,6 +41,11 @@ function App() {
   });
   const [isPractice, setIsPractice] = useState(false);
   
+  // ★追加：サドンデスモードフラグ
+  const [isSuddenDeath, setIsSuddenDeath] = useState(false);
+  // ★追加：ゲームオーバー判定
+  const [isGameOver, setIsGameOver] = useState(false);
+
   // 設定保存
   useEffect(() => { localStorage.setItem('class104_muted', isMuted); }, [isMuted]);
   useEffect(() => { localStorage.setItem('class104_inputMethod', inputMethod); }, [inputMethod]);
@@ -129,6 +134,14 @@ function App() {
     }
   };
 
+  // 問題切り替え時の入力クリア
+  useEffect(() => {
+    setInputVal('');
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [currentStudent]);
+
   // タイマー
   useEffect(() => {
     let interval;
@@ -142,7 +155,7 @@ function App() {
     return () => clearInterval(interval);
   }, [screen, startTime, endTime, penaltyTime, countdown]);
 
-  // コンボゲージ
+  // コンボゲージ（サドンデスではコンボ切れは許容するが、ミス扱いにはしない）
   useEffect(() => {
     let interval;
     if (screen === 'game' && combo > 0 && !endTime) {
@@ -210,10 +223,28 @@ function App() {
     setChoices(mixed);
   };
 
-  // --- ゲーム開始 ---
+  // --- ゲーム開始系 ---
   const startNormalGame = (mode, count) => {
     const method = mode === 'seat' ? 'seat' : inputMethod;
-    setPendingGameSettings({ targetStudents: students, mode, count, random: true, practice: false, method });
+    setPendingGameSettings({ 
+      targetStudents: students, mode, count, random: true, practice: false, 
+      method, suddenDeath: false 
+    });
+    startCountdown();
+  };
+
+  // ★追加：サドンデス開始
+  const startSuddenDeathGame = (mode) => {
+    const method = mode === 'seat' ? 'seat' : inputMethod;
+    setPendingGameSettings({ 
+      targetStudents: students, 
+      mode, 
+      count: 37, // 全員固定
+      random: true, 
+      practice: false, 
+      method, 
+      suddenDeath: true // フラグON
+    });
     startCountdown();
   };
 
@@ -225,7 +256,10 @@ function App() {
     if(targets.length === 0) return alert("生徒を選んでください");
     
     const method = mode === 'seat' ? 'seat' : inputMethod;
-    setPendingGameSettings({ targetStudents: targets, mode, count: targets.length, random: isRandomOrder, practice: true, method });
+    setPendingGameSettings({ 
+      targetStudents: targets, mode, count: targets.length, random: isRandomOrder, practice: true, 
+      method, suddenDeath: false 
+    });
     startCountdown();
   }
 
@@ -240,7 +274,8 @@ function App() {
       count: weakList.length, 
       random: true, 
       practice: true, 
-      method 
+      method,
+      suddenDeath: false
     });
     startCountdown();
   };
@@ -253,12 +288,14 @@ function App() {
   };
 
   const startRealGame = () => {
-    const { targetStudents, mode, count, random, practice, method } = pendingGameSettings;
+    const { targetStudents, mode, count, random, practice, method, suddenDeath } = pendingGameSettings;
     setGameMode(mode);
     setTargetCount(count);
     setIsRandomOrder(random);
     setIsPractice(practice);
     setInputMethod(method);
+    setIsSuddenDeath(!!suddenDeath); // サドンデスフラグ設定
+    setIsGameOver(false); // ゲームオーバー状態リセット
     
     let list = [...targetStudents];
     if (mode === 'id' || mode === 'seat') {
@@ -308,8 +345,25 @@ function App() {
     setAnimKey(prev => prev + 1);
   };
 
+  // ★追加：ゲームオーバー処理
+  const triggerGameOver = () => {
+    const end = Date.now();
+    setEndTime(end);
+    setIsGameOver(true);
+    setScreen('result');
+    playSoundSafe('dummy'); // 残念な音の代わりにダミー音
+    triggerVibrate([50, 100, 50, 100, 50]); // 長めの振動
+  };
+
   const handlePass = () => {
     if (!currentStudent) return;
+    
+    // ★サドンデスなら即死
+    if (isSuddenDeath) {
+      triggerGameOver();
+      return;
+    }
+
     playSoundSafe('dummy'); 
     triggerVibrate(15);
     setCombo(0); 
@@ -354,6 +408,7 @@ function App() {
       return;
     }
 
+    // サドンデス完走は記録に残す（通常モードと同じ扱い）
     const currentBestRecord = ranking
       .filter(rec => rec.mode === gameMode && rec.count === targetCount)
       .sort((a, b) => a.time - b.time)[0];
@@ -457,18 +512,28 @@ function App() {
       const timeTaken = (Date.now() - questionStartTime) / 1000;
       setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken, isPass: false }]);
       
+      // 練習でなければ統計保存
       if (!isPractice) {
         updateStats(currentStudent.id, timeTaken);
       }
 
       const newCompletedIds = [...completedIds, currentStudent.id];
       setCompletedIds(newCompletedIds);
-      setInputVal('');
+      
+      // ★修正：useEffectでクリアされるが、念のためここでも
+      // setInputVal(''); 
       
       nextQuestion(newCompletedIds);
     } else {
       if (!isPartialMatch) {
         if (isButton || val.length > 0) {
+          
+          // ★サドンデスなら即死
+          if (isSuddenDeath) {
+            triggerGameOver();
+            return;
+          }
+
           setIsShake(true);
           setMistakeCount(prev => prev + 1);
           if (isButton) {
@@ -502,13 +567,15 @@ function App() {
   };
 
   const shareResult = (platform) => {
+    if (isGameOver) return; // ゲームオーバー時はシェアなし（あるいは失敗シェア）
+
     const time = currentTimeDisplay;
     let modeStr = 'ひらがな';
     if(gameMode === 'name') modeStr = '漢字';
     if(gameMode === 'id') modeStr = '番号';
     if(gameMode === 'seat') modeStr = '座席';
     
-    const typeStr = isPractice ? '練習' : `${targetCount}人モード`;
+    const typeStr = isSuddenDeath ? 'サドンデス' : isPractice ? '練習' : `${targetCount}人モード`;
     const rankStr = rankResult ? `【ランク${rankResult}】` : '';
     const newRecStr = isNewRecord ? '【自己新！】' : '';
     const perfectStr = mistakeCount === 0 ? '【PERFECT!!】' : '';
@@ -618,6 +685,17 @@ function App() {
               </div>
             </div>
 
+            {/* ★追加：サドンデスモード */}
+            <div className="section-group">
+              <h3 style={{color:'#d63031'}}>💀 サドンデス (一発退場)</h3>
+              <div className="button-row four-cols">
+                <button onClick={() => startSuddenDeathGame('reading')} className="btn-danger">ひらがな</button>
+                <button onClick={() => startSuddenDeathGame('name')} className="btn-danger">漢字</button>
+                <button onClick={() => startSuddenDeathGame('id')} className="btn-danger-outline">番号</button>
+                <button onClick={() => startSuddenDeathGame('seat')} className="btn-danger-outline">座席</button>
+              </div>
+            </div>
+
             <div className="sub-menu-row">
               <button onClick={() => { setIsPractice(true); setScreen('practice'); }} className="btn-outline">🔰 練習・カスタム</button>
               <button onClick={() => setScreen('roster')} className="btn-outline">📊 成績リスト</button>
@@ -675,7 +753,6 @@ function App() {
           </p>
           
           <div className="roster-list-container">
-            {/* 先生 */}
             {students.find(s => s.id === 37) && (
               <div className="teacher-header-card">
                 <span className="teacher-badge">Teacher</span>
@@ -683,7 +760,6 @@ function App() {
               </div>
             )}
 
-            {/* 生徒リスト（★ここをリスト表示に） */}
             <div className="roster-list">
               {students.filter(s => s.id !== 37).map((s, index) => (
                 <div 
@@ -704,7 +780,6 @@ function App() {
         </div>
       )}
 
-      {/* 練習モード */}
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
           <h2>練習モード設定</h2>
@@ -775,8 +850,10 @@ function App() {
           <div className="header-info">
              <span className="progress">残り: {Math.min(targetCount, questionList.length) - completedIds.length} 人</span>
              <div className="combo-container">
-               {combo > 1 && <span className="combo-badge">🔥 {combo} COMBO!</span>}
-               {combo > 0 && (
+               {/* サドンデス時は専用バッジ */}
+               {isSuddenDeath ? <span className="sudden-death-badge">💀 SUDDEN DEATH</span> : (combo > 1 && <span className="combo-badge">🔥 {combo} COMBO!</span>)}
+               
+               {!isSuddenDeath && combo > 0 && (
                  <div className="combo-gauge-wrapper">
                    <div 
                      className="combo-gauge-fill" 
@@ -836,7 +913,7 @@ function App() {
             </div>
           )}
 
-          <button onClick={handlePass} className="pass-button">パス (+5秒)</button>
+          <button onClick={handlePass} className="pass-button">パス {isSuddenDeath ? '(GAMEOVER)' : '(+5秒)'}</button>
           
           <div className="sub-game-menu">
             <button onClick={retryGame} className="icon-btn">🔄 やり直し</button>
@@ -849,25 +926,39 @@ function App() {
 
       {screen === 'result' && (
         <div className="result-screen fade-in">
-          {mistakeCount === 0 && <div className="perfect-badge">👑 PERFECT!! 👑</div>}
-          {isNewRecord && <div className="new-record-badge">✨ NEW RECORD!! ✨</div>}
+          {/* ゲームオーバー時の表示 */}
+          {isGameOver && (
+            <div className="game-over-container">
+              <h2 className="game-over-title">💀 GAME OVER 💀</h2>
+              <p className="game-over-text">サドンデス失敗...</p>
+            </div>
+          )}
+
+          {!isGameOver && mistakeCount === 0 && <div className="perfect-badge">👑 PERFECT!! 👑</div>}
+          {!isGameOver && isNewRecord && <div className="new-record-badge">✨ NEW RECORD!! ✨</div>}
           
-          <h2>
-             {rankResult && <span className="rank-badge">RANK {rankResult}</span>}
-             🎉 CLEAR! 🎉
-          </h2>
+          {!isGameOver && (
+            <h2>
+               {rankResult && <span className="rank-badge">RANK {rankResult}</span>}
+               🎉 CLEAR! 🎉
+            </h2>
+          )}
+
           <p className="sub-title">
-            {isPractice ? '練習モード' : `${targetCount}人モード`} 
+            {isSuddenDeath ? 'サドンデス' : isPractice ? '練習モード' : `${targetCount}人モード`} 
             ({gameMode === 'reading' ? 'ひらがな' : gameMode === 'name' ? '漢字' : gameMode === 'id' ? '番号' : '座席'})
           </p>
           
-          <div className="result-box">
-            <p className="time-label">Time</p>
-            <p className="time-display">{currentTimeDisplay} 秒</p>
-            {isPractice && <p style={{fontSize:'0.8rem', color:'#999', marginTop:'5px'}}>※練習モードのため記録は保存されません</p>}
-          </div>
+          {!isGameOver && (
+            <div className="result-box">
+              <p className="time-label">Time</p>
+              <p className="time-display">{currentTimeDisplay} 秒</p>
+              {isPractice && <p style={{fontSize:'0.8rem', color:'#999', marginTop:'5px'}}>※練習モードのため記録は保存されません</p>}
+            </div>
+          )}
 
-          {getWeaknessList().length > 0 && (
+          {/* ゲームオーバー時はシェアも復習もなし、タイトルへ */}
+          {!isGameOver && getWeaknessList().length > 0 && (
             <div className="weakness-box">
               <h3>🐢 時間がかかった人</h3>
               <ul>
@@ -886,12 +977,14 @@ function App() {
             </div>
           )}
 
-          <div className="share-area">
-            <div className="share-buttons">
-              <button onClick={() => shareResult('line')} className="btn-line">LINE</button>
-              <button onClick={() => shareResult('x')} className="btn-x">X</button>
+          {!isGameOver && (
+            <div className="share-area">
+              <div className="share-buttons">
+                <button onClick={() => shareResult('line')} className="btn-line">LINE</button>
+                <button onClick={() => shareResult('x')} className="btn-x">X</button>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="retry-buttons">
             <button onClick={() => setScreen('start')} className="btn-primary">トップに戻る</button>

@@ -8,6 +8,7 @@
   --gold-color: #ff7eb3;
   --btn-primary-grad: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); /* ボタン緑青 */
   --btn-secondary-grad: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%); /* ボタン紫青 */
+  --btn-danger-grad: linear-gradient(120deg, #ff9a9e 0%, #fecfef 100%); /* 赤ボタン */
   --bg-gradient: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fad0c4, #a18cd1, #fbc2eb); /* 背景 */
   --card-bg: rgba(255, 255, 255, 0.92);
   --text-color: #555;
@@ -39,7 +40,7 @@ html, body {
 
 .container { 
   display: flex; flex-direction: column; align-items: center; justify-content: center; 
-  width: 100%; flex: 1; padding: 1rem; box-sizing: border-box; 
+  width: 100%; flex: 1; padding: 1rem 0.5rem; box-sizing: border-box; 
   min-height: 100dvh;
 }
 
@@ -125,6 +126,10 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 
 .btn-primary { background: var(--btn-primary-grad) !important; color: white !important; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 .btn-secondary { background: var(--btn-secondary-grad) !important; color: white !important; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+/* ★追加：サドンデス用ボタン */
+.btn-danger { background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%) !important; color: white !important; box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3); }
+.btn-danger-outline { background: #fff; border: 2px solid #ff4757; color: #ff4757; }
+
 .btn-outline { background: #fff; border: 2px solid var(--primary-color); color: var(--primary-color); box-shadow: 0 3px 8px rgba(0,0,0,0.05); }
 .btn-text { background: none; color: #888; box-shadow: none; text-decoration: none; margin-top: auto; padding: 0.6rem; font-size: 0.85rem; border-bottom: 1px solid transparent; transition: all 0.3s; border: none;}
 
@@ -172,6 +177,11 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 .combo-badge { color: #fff; background: linear-gradient(45deg, #ff9a9e, #fad0c4); padding: 2px 8px; border-radius: 12px; font-style: italic; font-weight: 900; font-size: 0.8rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); animation: popIn 0.3s; margin-bottom: 2px; white-space: nowrap;}
 .combo-gauge-wrapper { width: 50px; height: 6px; background: #eee; border-radius: 4px; overflow: hidden; border: 1px solid #fff;}
 .combo-gauge-fill { height: 100%; background: #ff9a9e; transition: width 0.1s linear; }
+
+/* ★追加：サドンデスバッジ */
+.sudden-death-badge {
+  background: #ff4757; color: white; padding: 4px 10px; border-radius: 12px; font-weight: 900; font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); animation: pulseRecord 1s infinite alternate;
+}
 
 .question-card-wrapper { animation: slideInRight 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); width: 100%; }
 @keyframes slideInRight { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -348,6 +358,11 @@ button:active { transform: translateY(1px); box-shadow: 0 2px 5px rgba(0,0,0,0.1
 .btn-line { background: #06C755 !important; color: white !important; width: auto; padding: 0.7rem 1.2rem; flex: 1; box-shadow: 0 5px 15px rgba(6, 199, 85, 0.2); text-shadow: none; }
 .btn-x { background: #000 !important; color: white !important; width: auto; padding: 0.7rem 1.2rem; flex: 1; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); text-shadow: none; }
 .retry-buttons { margin-top: 1.2rem; width: 100%; }
+
+/* ★追加：ゲームオーバー画面 */
+.game-over-container { margin: 1rem 0; animation: shake 0.5s; }
+.game-over-title { font-size: 3rem; color: #ff4757; font-weight: 900; text-shadow: 2px 2px 0 #000; margin: 0; }
+.game-over-text { font-size: 1.2rem; font-weight: bold; color: #555; }
 
 /* 揺れ */
 .shake { animation: shake 0.4s both; }
