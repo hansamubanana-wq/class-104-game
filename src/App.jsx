@@ -580,6 +580,7 @@ function App() {
         </div>
       )}
 
+      {/* ミュートボタン */}
       <button className="mute-button" onClick={() => setIsMuted(!isMuted)}>
         {isMuted ? "🔇" : "🔊"}
       </button>
@@ -619,13 +620,12 @@ function App() {
 
             <div className="sub-menu-row">
               <button onClick={() => { setIsPractice(true); setScreen('practice'); }} className="btn-outline">🔰 練習・カスタム</button>
-              <button onClick={() => setScreen('roster')} className="btn-outline">📊 座席表・成績</button>
+              <button onClick={() => setScreen('roster')} className="btn-outline">📊 成績リスト</button>
             </div>
           </div>
 
           <div className="ranking-area">
             <div className="ranking-header">
-              {/* ★変更：ドロップダウンリストに変更 */}
               <select 
                 className="ranking-dropdown" 
                 value={rankingTab} 
@@ -669,31 +669,33 @@ function App() {
 
       {screen === 'roster' && (
         <div className="roster-screen fade-in">
-          <h2>座席・成績表</h2>
+          <h2>成績リスト</h2>
           <p style={{fontSize: '0.8rem', color: 'var(--text-sub)', marginBottom: '0.5rem'}}>
-            平均タイム: <span className="legend s">■速い(上位1/3)</span> <span className="legend a">■普通</span> <span className="legend b">■遅い(下位1/3)</span>
+            平均タイム: <span className="legend s">■速い</span> <span className="legend a">■普通</span> <span className="legend b">■遅い</span>
           </p>
-          <div className="classroom-layout">
-            <div className="blackboard-area">
-              <div className="blackboard">黒 板</div>
-              {students.find(s => s.id === 37) && (
-                <div className="teacher-desk">
-                  <span className="teacher-label">Teacher</span>
-                  <span className="teacher-name">{students.find(s => s.id === 37).name}</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="desks-grid">
+          
+          <div className="roster-list-container">
+            {/* 先生 */}
+            {students.find(s => s.id === 37) && (
+              <div className="teacher-header-card">
+                <span className="teacher-badge">Teacher</span>
+                <span className="teacher-name-large">{students.find(s => s.id === 37).name}</span>
+              </div>
+            )}
+
+            {/* 生徒リスト（★ここをリスト表示に） */}
+            <div className="roster-list">
               {students.filter(s => s.id !== 37).map((s, index) => (
                 <div 
                   key={s.id} 
-                  className={`desk-item ${getMasteryClass(s.id)}`}
+                  className={`list-item ${getMasteryClass(s.id)}`}
                   style={{ animationDelay: `${index * 0.02}s` }}
                 >
-                  <span className="desk-id">{s.id}</span>
-                  <span className="desk-name">{s.name}</span>
-                  <span className="desk-time">{getMasteryTime(s.id)}</span>
+                  <div className="list-item-left">
+                    <span className="list-id">{s.id}</span>
+                    <span className="list-name">{s.name}</span>
+                  </div>
+                  <span className="list-time">{getMasteryTime(s.id)}</span>
                 </div>
               ))}
             </div>
@@ -702,7 +704,7 @@ function App() {
         </div>
       )}
 
-      {/* (以下、練習モード・ゲーム画面・リザルト画面は変更なし) */}
+      {/* 練習モード */}
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
           <h2>練習モード設定</h2>
