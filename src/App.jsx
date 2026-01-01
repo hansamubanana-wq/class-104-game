@@ -4,7 +4,7 @@ import './App.css';
 import { students } from './students';
 import { playSound } from './SoundManager';
 
-// ヘルパー
+// ヘルパー: ひらがな変換
 const toHiragana = (str) => {
   return str.replace(/[\u30a1-\u30f6]/g, function(match) {
     var chr = match.charCodeAt(0) - 0x60;
@@ -12,12 +12,23 @@ const toHiragana = (str) => {
   });
 };
 
+// ランク計算 (通常モード用)
 const calculateRank = (totalTime, count) => {
   const avg = totalTime / count;
   if (avg < 1.5) return "S";
   if (avg < 2.2) return "A";
   if (avg < 3.0) return "B";
   return "C";
+};
+
+// 称号計算
+const getLevelInfo = (totalCorrect) => {
+  if (totalCorrect >= 2000) return { title: "🌈 神教師", next: null, color: "#ff00ff" };
+  if (totalCorrect >= 1000) return { title: "👑 マスター", next: 2000, color: "#ffd700" };
+  if (totalCorrect >= 500) return { title: "🔥 達人", next: 1000, color: "#ff4757" };
+  if (totalCorrect >= 200) return { title: "✨ ベテラン", next: 500, color: "#2ed573" };
+  if (totalCorrect >= 50) return { title: "🔰 駆け出し", next: 200, color: "#1e90ff" };
+  return { title: "🥚 見習い", next: 50, color: "#a4b0be" };
 };
 
 const COMBO_LIMIT = 5000; 
@@ -31,14 +42,10 @@ function App() {
   });
   
   const [gameMode, setGameMode] = useState('reading');
-  
-  // ★修正：初期値を確実に 'typing' (キーボード) にする
   const [inputMethod, setInputMethod] = useState(() => {
     const saved = localStorage.getItem('class104_inputMethod');
-    // 保存データが 'choice' の時だけ choice にし、それ以外（初回など）はすべて typing にする
     return saved === 'choice' ? 'choice' : 'typing';
   });
-
   const [targetCount, setTargetCount] = useState(10);
   const [isRandomOrder, setIsRandomOrder] = useState(() => {
     const saved = localStorage.getItem('class104_random');
@@ -46,15 +53,25 @@ function App() {
   });
   const [isPractice, setIsPractice] = useState(false);
   
-  // ★追加：サドンデスモードフラグ
+  // モードフラグ
   const [isSuddenDeath, setIsSuddenDeath] = useState(false);
-  // ★追加：ゲームオーバー判定
-  const [isGameOver, setIsGameOver] = useState(false);
+  const [isTimeAttack, setIsTimeAttack] = useState(false);
+  
+  // ゲーム状態
+  const [isGameOver, setIsGameOver] = useState(false); // サドンデス失敗 or 時間切れ
+  const [score, setScore] = useState(0); // タイムアタック用スコア
+  const [timeLeft, setTimeLeft] = useState(60); // タイムアタック残り時間
+
+  // 累計成績 (レベル用)
+  const [totalCorrectCount, setTotalCorrectCount] = useState(() => {
+    return Number(localStorage.getItem('class104_totalCorrect')) || 0;
+  });
 
   // 設定保存
   useEffect(() => { localStorage.setItem('class104_muted', isMuted); }, [isMuted]);
   useEffect(() => { localStorage.setItem('class104_inputMethod', inputMethod); }, [inputMethod]);
   useEffect(() => { localStorage.setItem('class104_random', isRandomOrder); }, [isRandomOrder]);
+  useEffect(() => { localStorage.setItem('class104_totalCorrect', totalCorrectCount); }, [totalCorrectCount]);
 
   // カウントダウン & 保留設定
   const [countdown, setCountdown] = useState(null); 
@@ -82,7 +99,7 @@ function App() {
   // コンボ・ランク・新記録・ミス回数
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
-  const [comboTimeLeft, setComboTimeLeft] = useState(0); 
+  const [comboGauge, setComboGauge] = useState(0); 
   const [rankResult, setRankResult] = useState(null);
   const [isNewRecord, setIsNewRecord] = useState(false);
   const [mistakeCount, setMistakeCount] = useState(0);
@@ -100,7 +117,10 @@ function App() {
     return saved ? JSON.parse(saved) : {};
   });
 
-  // 相対評価用の色マップ
+  // レベル情報取得
+  const levelInfo = getLevelInfo(totalCorrectCount);
+
+  // マスタリーマップ
   const masteryColors = useMemo(() => {
     const validStudents = students
       .filter(s => s.id !== 37 && studentStats[s.id] && studentStats[s.id].count > 0)
@@ -110,20 +130,13 @@ function App() {
       }));
 
     validStudents.sort((a, b) => a.avg - b.avg);
-
     const colors = {};
     const total = validStudents.length;
-    
     validStudents.forEach((s, index) => {
-      if (index < total / 3) {
-        colors[s.id] = 'master-s'; 
-      } else if (index < (total * 2) / 3) {
-        colors[s.id] = 'master-a'; 
-      } else {
-        colors[s.id] = 'master-b'; 
-      }
+      if (index < total / 3) colors[s.id] = 'master-s'; 
+      else if (index < (total * 2) / 3) colors[s.id] = 'master-a'; 
+      else colors[s.id] = 'master-b'; 
     });
-
     return colors;
   }, [studentStats]);
 
@@ -142,30 +155,40 @@ function App() {
   // 問題切り替え時の入力クリア
   useEffect(() => {
     setInputVal('');
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    if (inputRef.current) inputRef.current.focus();
   }, [currentStudent]);
 
-  // タイマー
+  // タイマー制御 (通常モード: カウントアップ / タイムアタック: カウントダウン)
   useEffect(() => {
     let interval;
     if (screen === 'game' && startTime && !endTime && countdown === null) {
       interval = setInterval(() => {
         const now = Date.now();
-        const diff = (now - startTime) / 1000 + penaltyTime;
-        setCurrentTimeDisplay(diff.toFixed(2));
+        
+        if (isTimeAttack) {
+          // タイムアタック: カウントダウン
+          const elapsed = (now - startTime) / 1000;
+          const remain = Math.max(0, 60 - elapsed - penaltyTime); // penaltyTimeはマイナス値(ボーナス)として使う
+          setTimeLeft(remain);
+          if (remain <= 0) {
+            triggerGameOver(true); // 時間切れ
+          }
+        } else {
+          // 通常: カウントアップ
+          const diff = (now - startTime) / 1000 + penaltyTime;
+          setCurrentTimeDisplay(diff.toFixed(2));
+        }
       }, 50);
     }
     return () => clearInterval(interval);
-  }, [screen, startTime, endTime, penaltyTime, countdown]);
+  }, [screen, startTime, endTime, penaltyTime, countdown, isTimeAttack]);
 
   // コンボゲージ
   useEffect(() => {
     let interval;
     if (screen === 'game' && combo > 0 && !endTime) {
       interval = setInterval(() => {
-        setComboTimeLeft(prev => {
+        setComboGauge(prev => {
           if (prev <= 100) {
             setCombo(0); 
             return 0;
@@ -228,27 +251,32 @@ function App() {
     setChoices(mixed);
   };
 
-  // --- ゲーム開始系 ---
+  // --- ゲーム開始設定 ---
   const startNormalGame = (mode, count) => {
     const method = mode === 'seat' ? 'seat' : inputMethod;
     setPendingGameSettings({ 
       targetStudents: students, mode, count, random: true, practice: false, 
-      method, suddenDeath: false 
+      method, suddenDeath: false, timeAttack: false 
     });
     startCountdown();
   };
 
-  // サドンデス開始
   const startSuddenDeathGame = (mode) => {
     const method = mode === 'seat' ? 'seat' : inputMethod;
     setPendingGameSettings({ 
-      targetStudents: students, 
-      mode, 
-      count: 37, // 全員固定
-      random: true, 
-      practice: false, 
-      method, 
-      suddenDeath: true 
+      targetStudents: students, mode, count: 37, random: true, practice: false, 
+      method, suddenDeath: true, timeAttack: false
+    });
+    startCountdown();
+  };
+
+  // ★追加：タイムアタック開始
+  const startTimeAttackGame = (mode) => {
+    const method = mode === 'seat' ? 'seat' : inputMethod;
+    setPendingGameSettings({ 
+      targetStudents: students, mode, count: 9999, // 無限
+      random: true, practice: false, 
+      method, suddenDeath: false, timeAttack: true 
     });
     startCountdown();
   };
@@ -257,13 +285,11 @@ function App() {
     let targets = practiceType === 'range' 
       ? students.filter(s => s.id >= practiceRange.start && s.id <= practiceRange.end)
       : students.filter(s => practiceSelectIds.includes(s.id));
-    
     if(targets.length === 0) return alert("生徒を選んでください");
-    
     const method = mode === 'seat' ? 'seat' : inputMethod;
     setPendingGameSettings({ 
       targetStudents: targets, mode, count: targets.length, random: isRandomOrder, practice: true, 
-      method, suddenDeath: false 
+      method, suddenDeath: false, timeAttack: false 
     });
     startCountdown();
   }
@@ -271,16 +297,10 @@ function App() {
   const startReviewGame = () => {
     const weakList = getWeaknessList().map(item => item.student);
     if (weakList.length === 0) return;
-
     const method = gameMode === 'seat' ? 'seat' : inputMethod;
     setPendingGameSettings({ 
-      targetStudents: weakList, 
-      mode: gameMode, 
-      count: weakList.length, 
-      random: true, 
-      practice: true, 
-      method,
-      suddenDeath: false
+      targetStudents: weakList, mode: gameMode, count: weakList.length, random: true, practice: true, 
+      method, suddenDeath: false, timeAttack: false
     });
     startCountdown();
   };
@@ -293,26 +313,22 @@ function App() {
   };
 
   const startRealGame = () => {
-    const { targetStudents, mode, count, random, practice, method, suddenDeath } = pendingGameSettings;
+    const { targetStudents, mode, count, random, practice, method, suddenDeath, timeAttack } = pendingGameSettings;
     setGameMode(mode);
     setTargetCount(count);
     setIsRandomOrder(random);
     setIsPractice(practice);
     setInputMethod(method);
     setIsSuddenDeath(!!suddenDeath);
+    setIsTimeAttack(!!timeAttack);
     setIsGameOver(false);
     
+    // リスト作成
     let list = [...targetStudents];
-    if (mode === 'id' || mode === 'seat') {
-      list = list.filter(s => s.id !== 37);
-    }
-    if (list.length === 0) {
-      alert("出題対象がいません");
-      setScreen('start');
-      return;
-    }
+    if (mode === 'id' || mode === 'seat') list = list.filter(s => s.id !== 37);
+    if (list.length === 0) { alert("出題対象がいません"); setScreen('start'); return; }
 
-    if (random) list.sort(() => Math.random() - 0.5);
+    if (random || timeAttack) list.sort(() => Math.random() - 0.5);
     else list.sort((a, b) => a.id - b.id);
 
     setQuestionList(list);
@@ -325,11 +341,13 @@ function App() {
     
     setCombo(0);
     setMaxCombo(0);
-    setComboTimeLeft(0);
+    setComboGauge(0);
     setRankResult(null);
     setFeedback(null);
     setIsNewRecord(false);
     setMistakeCount(0);
+    setScore(0); // タイムアタック用
+    setTimeLeft(60); // タイムアタック用
 
     setScreen('game');
     const now = Date.now();
@@ -340,6 +358,20 @@ function App() {
   };
 
   const nextQuestion = (newCompletedIds) => {
+    if (isTimeAttack) {
+      // タイムアタック：無限ループ（ランダムに次を選ぶ）
+      // 直前と同じにならないようにする簡易ロジック
+      let nextStudent = currentStudent;
+      while (nextStudent.id === currentStudent.id) {
+        nextStudent = questionList[Math.floor(Math.random() * questionList.length)];
+      }
+      setCurrentStudent(nextStudent);
+      setQuestionStartTime(Date.now());
+      setAnimKey(prev => prev + 1);
+      return;
+    }
+
+    // 通常モード
     if (newCompletedIds.length >= targetCount || newCompletedIds.length >= questionList.length) {
       finishGame();
       return;
@@ -350,21 +382,24 @@ function App() {
     setAnimKey(prev => prev + 1);
   };
 
-  // ゲームオーバー処理
-  const triggerGameOver = () => {
+  const triggerGameOver = (isTimeout = false) => {
     const end = Date.now();
     setEndTime(end);
     setIsGameOver(true);
     setScreen('result');
-    playSoundSafe('dummy'); 
+    if (!isTimeout) playSoundSafe('dummy'); 
     triggerVibrate([50, 100, 50, 100, 50]); 
   };
 
   const handlePass = () => {
     if (!currentStudent) return;
     
-    if (isSuddenDeath) {
-      triggerGameOver();
+    if (isSuddenDeath) { triggerGameOver(); return; }
+    if (isTimeAttack) {
+      // パスはスコア増えない & タイム減る
+      setPenaltyTime(prev => prev + 5); // 実際は残り時間が5秒減る
+      playSoundSafe('dummy');
+      nextQuestion(completedIds); // 完了IDは増やさない
       return;
     }
 
@@ -412,36 +447,35 @@ function App() {
       return;
     }
 
-    const currentBestRecord = ranking
-      .filter(rec => rec.mode === gameMode && rec.count === targetCount)
-      .sort((a, b) => a.time - b.time)[0];
+    // 記録保存（通常モードのみ）
+    if (!isTimeAttack) {
+      const currentBestRecord = ranking
+        .filter(rec => rec.mode === gameMode && rec.count === targetCount)
+        .sort((a, b) => a.time - b.time)[0];
 
-    const isNewBest = !currentBestRecord || finalTime < currentBestRecord.time;
-    setIsNewRecord(isNewBest);
+      const isNewBest = !currentBestRecord || finalTime < currentBestRecord.time;
+      setIsNewRecord(isNewBest);
 
-    const isPerfect = mistakeCount === 0;
-    if (isNewBest || isPerfect) {
-      triggerConfetti(true);
-    } else {
-      triggerConfetti(false);
+      const isPerfect = mistakeCount === 0;
+      if (isNewBest || isPerfect) triggerConfetti(true);
+      else triggerConfetti(false);
+
+      const newRecord = {
+        date: new Date().toLocaleDateString(),
+        time: finalTime,
+        mode: gameMode,
+        count: targetCount
+      };
+      const newRanking = [...ranking, newRecord].sort((a, b) => a.time - b.time); 
+      setRanking(newRanking);
+      localStorage.setItem('class104_ranking_v3', JSON.stringify(newRanking));
     }
-
-    const newRecord = {
-      date: new Date().toLocaleDateString(),
-      time: finalTime,
-      mode: gameMode,
-      count: targetCount
-    };
-    const newRanking = [...ranking, newRecord].sort((a, b) => a.time - b.time); 
-    setRanking(newRanking);
-    localStorage.setItem('class104_ranking_v3', JSON.stringify(newRanking));
   };
 
   const handleInputChange = (e) => {
     const val = e.target.value;
     setInputVal(val);
     setIsShake(false);
-
     if (!currentStudent) return;
     checkAnswer(val, false);
   };
@@ -458,9 +492,7 @@ function App() {
 
   const showFeedback = (type) => {
     setFeedback(type);
-    setTimeout(() => {
-      setFeedback(null);
-    }, 400); 
+    setTimeout(() => { setFeedback(null); }, 400); 
   };
 
   const updateStats = (studentId, timeTaken) => {
@@ -488,21 +520,16 @@ function App() {
     else targetRaw = currentStudent.reading;
     
     const cleanTarget = targetRaw.replace(/\s+/g, '');
-    
     let cleanVal = val.replace(/\s+/g, '');
-    if (gameMode === 'reading' && !isButton) {
-      cleanVal = toHiragana(val).replace(/\s+/g, ''); 
-    }
+    if (gameMode === 'reading' && !isButton) cleanVal = toHiragana(val).replace(/\s+/g, ''); 
 
-    if (cleanVal === cleanTarget) {
-      isCorrect = true;
-    } else {
-      if (!isButton && cleanTarget.startsWith(cleanVal) && cleanVal.length > 0) {
-        isPartialMatch = true;
-      }
+    if (cleanVal === cleanTarget) isCorrect = true;
+    else {
+      if (!isButton && cleanTarget.startsWith(cleanVal) && cleanVal.length > 0) isPartialMatch = true;
     }
 
     if (isCorrect) {
+      // 正解処理
       playSoundSafe('correct');
       showFeedback('correct');
       triggerVibrate(15);
@@ -510,25 +537,41 @@ function App() {
       const newCombo = combo + 1;
       setCombo(newCombo);
       if (newCombo > maxCombo) setMaxCombo(newCombo);
-      setComboTimeLeft(COMBO_LIMIT);
+      setComboGauge(COMBO_LIMIT);
 
-      const timeTaken = (Date.now() - questionStartTime) / 1000;
-      setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken, isPass: false }]);
-      
+      // レベル用カウントアップ
       if (!isPractice) {
-        updateStats(currentStudent.id, timeTaken);
+        setTotalCorrectCount(prev => prev + 1);
       }
 
-      const newCompletedIds = [...completedIds, currentStudent.id];
-      setCompletedIds(newCompletedIds);
-      
-      nextQuestion(newCompletedIds);
+      if (isTimeAttack) {
+        // タイムアタック専用処理
+        setScore(prev => prev + 1);
+        setPenaltyTime(prev => prev - 2); // 残り時間+2秒 (penaltyTimeを減らすことで残り時間を増やす)
+        // 統計は取らない（無限なので）
+        nextQuestion([]);
+      } else {
+        // 通常モード
+        const timeTaken = (Date.now() - questionStartTime) / 1000;
+        setQuestionStats([...questionStats, { student: currentStudent, time: timeTaken, isPass: false }]);
+        if (!isPractice) updateStats(currentStudent.id, timeTaken);
+
+        const newCompletedIds = [...completedIds, currentStudent.id];
+        setCompletedIds(newCompletedIds);
+        nextQuestion(newCompletedIds);
+      }
+
     } else {
+      // 不正解処理
       if (!isPartialMatch) {
         if (isButton || val.length > 0) {
           
-          if (isSuddenDeath) {
-            triggerGameOver();
+          if (isSuddenDeath) { triggerGameOver(); return; }
+          
+          if (isTimeAttack) {
+            setPenaltyTime(prev => prev + 5); // 残り時間-5秒
+            setIsShake(true);
+            playSoundSafe('dummy');
             return;
           }
 
@@ -546,17 +589,11 @@ function App() {
 
   const triggerConfetti = (isMassive = false) => {
     if(!isMuted) playSoundSafe('clear'); 
-    
     if (isMassive) {
-      const duration = 3000;
-      const end = Date.now() + duration;
+      const end = Date.now() + 3000;
       (function frame() {
-        confetti({
-          particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#ff0', '#f00', '#0f0', '#00f'] 
-        });
-        confetti({
-          particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#ff0', '#f00', '#0f0', '#00f']
-        });
+        confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#ff0', '#f00', '#0f0', '#00f'] });
+        confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#ff0', '#f00', '#0f0', '#00f'] });
         if (Date.now() < end) requestAnimationFrame(frame);
       }());
     } else {
@@ -565,20 +602,19 @@ function App() {
   };
 
   const shareResult = (platform) => {
-    if (isGameOver) return;
+    if (isGameOver && isSuddenDeath) return; // サドンデス失敗はシェアなし
 
-    const time = currentTimeDisplay;
-    let modeStr = 'ひらがな';
-    if(gameMode === 'name') modeStr = '漢字';
-    if(gameMode === 'id') modeStr = '番号';
-    if(gameMode === 'seat') modeStr = '座席';
+    let text = "";
+    const modeStr = gameMode === 'reading' ? 'ひらがな' : gameMode === 'name' ? '漢字' : gameMode === 'id' ? '番号' : '座席';
     
-    const typeStr = isSuddenDeath ? 'サドンデス' : isPractice ? '練習' : `${targetCount}人モード`;
-    const rankStr = rankResult ? `【ランク${rankResult}】` : '';
-    const newRecStr = isNewRecord ? '【自己新！】' : '';
-    const perfectStr = mistakeCount === 0 ? '【PERFECT!!】' : '';
+    if (isTimeAttack) {
+      text = `⏱️ 104名前当て タイムアタック(${modeStr})で ${score}人 正解！`;
+    } else {
+      const typeStr = isSuddenDeath ? 'サドンデス' : isPractice ? '練習' : `${targetCount}人モード`;
+      const rankStr = rankResult ? `【ランク${rankResult}】` : '';
+      text = `🎉 104名前当て ${typeStr}(${modeStr})を${currentTimeDisplay}秒でクリア！${rankStr}`;
+    }
     
-    const text = `${perfectStr}${newRecStr}${rankStr} 104名前当て ${typeStr}(${modeStr})を${time}秒でクリア！`;
     const url = window.location.href;
     if (platform === 'line') window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text + '\n' + url)}`, '_blank');
     if (platform === 'x') window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
@@ -587,9 +623,7 @@ function App() {
   const getFilteredRanking = () => {
     const [rCount, rMode] = rankingTab.split('-');
     const countNum = parseInt(rCount);
-    return ranking
-      .filter(r => r.count === countNum && r.mode === rMode)
-      .slice(0, 5);
+    return ranking.filter(r => r.count === countNum && r.mode === rMode).slice(0, 5);
   };
 
   const getWeaknessList = () => {
@@ -610,9 +644,7 @@ function App() {
 
   const getQuestionText = () => {
     if (!currentStudent) return "";
-    if (gameMode === 'id' || gameMode === 'seat') {
-      return isTeacher(currentStudent.id) ? "Teacher" : currentStudent.name;
-    }
+    if (gameMode === 'id' || gameMode === 'seat') return isTeacher(currentStudent.id) ? "Teacher" : currentStudent.name;
     return isTeacher(currentStudent.id) ? "Teacher" : `${currentStudent.id}番`;
   };
 
@@ -622,13 +654,7 @@ function App() {
     return "ひらがな";
   };
 
-  const getMasteryClass = (id) => {
-    if (masteryColors[id]) {
-      return masteryColors[id];
-    }
-    return 'master-n'; 
-  };
-
+  const getMasteryClass = (id) => { if (masteryColors[id]) return masteryColors[id]; return 'master-n'; };
   const getMasteryTime = (id) => {
     const stat = studentStats[id];
     if (!stat || stat.count === 0) return '-';
@@ -645,7 +671,6 @@ function App() {
         </div>
       )}
 
-      {/* ミュートボタン */}
       <button className="mute-button" onClick={() => setIsMuted(!isMuted)}>
         {isMuted ? "🔇" : "🔊"}
       </button>
@@ -654,6 +679,13 @@ function App() {
 
       {screen === 'start' && (
         <div className="start-screen fade-in">
+          {/* レベル・称号表示 */}
+          <div className="level-card" style={{borderColor: levelInfo.color}}>
+            <div className="level-title" style={{color: levelInfo.color}}>{levelInfo.title}</div>
+            <div className="level-info">累計正解: {totalCorrectCount}回</div>
+            {levelInfo.next && <div className="level-next">次のランクまで: {levelInfo.next - totalCorrectCount}回</div>}
+          </div>
+
           <div className="input-mode-switch">
             <span className="switch-label">入力方法:</span>
             <div className="switch-body">
@@ -683,7 +715,6 @@ function App() {
               </div>
             </div>
 
-            {/* サドンデスモード */}
             <div className="section-group">
               <h3 style={{color:'#d63031'}}>💀 サドンデス (一発退場)</h3>
               <div className="button-row four-cols">
@@ -691,6 +722,16 @@ function App() {
                 <button onClick={() => startSuddenDeathGame('name')} className="btn-danger">漢字</button>
                 <button onClick={() => startSuddenDeathGame('id')} className="btn-danger-outline">番号</button>
                 <button onClick={() => startSuddenDeathGame('seat')} className="btn-danger-outline">座席</button>
+              </div>
+            </div>
+
+            <div className="section-group">
+              <h3 style={{color:'#0984e3'}}>⏱️ タイムアタック (60秒)</h3>
+              <div className="button-row four-cols">
+                <button onClick={() => startTimeAttackGame('reading')} className="btn-timeattack">ひらがな</button>
+                <button onClick={() => startTimeAttackGame('name')} className="btn-timeattack">漢字</button>
+                <button onClick={() => startTimeAttackGame('id')} className="btn-timeattack-outline">番号</button>
+                <button onClick={() => startTimeAttackGame('seat')} className="btn-timeattack-outline">座席</button>
               </div>
             </div>
 
@@ -702,11 +743,7 @@ function App() {
 
           <div className="ranking-area">
             <div className="ranking-header">
-              <select 
-                className="ranking-dropdown" 
-                value={rankingTab} 
-                onChange={(e) => setRankingTab(e.target.value)}
-              >
+              <select className="ranking-dropdown" value={rankingTab} onChange={(e) => setRankingTab(e.target.value)}>
                 <option value="10-reading">⚡️ 10問 - ひらがな</option>
                 <option value="10-name">⚡️ 10問 - 漢字</option>
                 <option value="10-id">⚡️ 10問 - 番号</option>
@@ -717,7 +754,6 @@ function App() {
                 <option value="37-seat">🔥 全員 - 座席</option>
               </select>
             </div>
-            
             <ul className="ranking-list">
               {getFilteredRanking().length === 0 && <li className="no-data">記録なし</li>}
               {getFilteredRanking().map((r, i) => (
@@ -728,9 +764,7 @@ function App() {
                 </li>
               ))}
             </ul>
-            {ranking.length > 0 && (
-              <button onClick={resetRanking} className="reset-rank-btn">🗑 履歴を削除</button>
-            )}
+            {ranking.length > 0 && <button onClick={resetRanking} className="reset-rank-btn">🗑 履歴を削除</button>}
           </div>
         </div>
       )}
@@ -743,13 +777,11 @@ function App() {
         </div>
       )}
 
+      {/* 名簿画面（リスト形式） */}
       {screen === 'roster' && (
         <div className="roster-screen fade-in">
           <h2>成績リスト</h2>
-          <p style={{fontSize: '0.8rem', color: 'var(--text-sub)', marginBottom: '0.5rem'}}>
-            平均タイム: <span className="legend s">■速い</span> <span className="legend a">■普通</span> <span className="legend b">■遅い</span>
-          </p>
-          
+          <p style={{fontSize: '0.8rem', color: 'var(--text-sub)', marginBottom: '0.5rem'}}>平均タイム: <span className="legend s">■速い</span> <span className="legend a">■普通</span> <span className="legend b">■遅い</span></p>
           <div className="roster-list-container">
             {students.find(s => s.id === 37) && (
               <div className="teacher-header-card">
@@ -757,18 +789,10 @@ function App() {
                 <span className="teacher-name-large">{students.find(s => s.id === 37).name}</span>
               </div>
             )}
-
             <div className="roster-list">
               {students.filter(s => s.id !== 37).map((s, index) => (
-                <div 
-                  key={s.id} 
-                  className={`list-item ${getMasteryClass(s.id)}`}
-                  style={{ animationDelay: `${index * 0.02}s` }}
-                >
-                  <div className="list-item-left">
-                    <span className="list-id">{s.id}</span>
-                    <span className="list-name">{s.name}</span>
-                  </div>
+                <div key={s.id} className={`list-item ${getMasteryClass(s.id)}`} style={{ animationDelay: `${index * 0.02}s` }}>
+                  <div className="list-item-left"><span className="list-id">{s.id}</span><span className="list-name">{s.name}</span></div>
                   <span className="list-time">{getMasteryTime(s.id)}</span>
                 </div>
               ))}
@@ -778,7 +802,7 @@ function App() {
         </div>
       )}
 
-      {/* 練習モード */}
+      {/* 練習設定 */}
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
           <h2>練習モード設定</h2>
@@ -814,14 +838,10 @@ function App() {
             <div className="select-list">
               {students.map(s => (
                 <label key={s.id} className="checkbox-item">
-                  <input 
-                    type="checkbox" 
-                    checked={practiceSelectIds.includes(s.id)}
-                    onChange={(e) => {
+                  <input type="checkbox" checked={practiceSelectIds.includes(s.id)} onChange={(e) => {
                       if (e.target.checked) setPracticeSelectIds([...practiceSelectIds, s.id]);
                       else setPracticeSelectIds(practiceSelectIds.filter(id => id !== s.id));
-                    }}
-                  />
+                    }} />
                   {isTeacher(s.id) ? "Teacher" : s.id}. {s.name}
                 </label>
               ))}
@@ -837,30 +857,25 @@ function App() {
         </div>
       )}
 
+      {/* ゲーム画面 */}
       {screen === 'game' && currentStudent && (
         <div className="game-screen fade-in">
           <div className="progress-bar-container">
-            <div 
-              className="progress-bar-fill" 
-              style={{ width: `${(completedIds.length / Math.min(targetCount, questionList.length)) * 100}%` }}
-            ></div>
+            <div className="progress-bar-fill" style={{ width: `${(completedIds.length / Math.min(targetCount, questionList.length)) * 100}%` }}></div>
           </div>
-          
           <div className="header-info">
-             <span className="progress">残り: {Math.min(targetCount, questionList.length) - completedIds.length} 人</span>
+             {isTimeAttack 
+               ? <span className="score-badge">🏆 SCORE: {score}</span>
+               : <span className="progress">残り: {Math.min(targetCount, questionList.length) - completedIds.length} 人</span>
+             }
              <div className="combo-container">
-               {isSuddenDeath ? <span className="sudden-death-badge">💀 SUDDEN DEATH</span> : (combo > 1 && <span className="combo-badge">🔥 {combo} COMBO!</span>)}
-               
-               {!isSuddenDeath && combo > 0 && (
-                 <div className="combo-gauge-wrapper">
-                   <div 
-                     className="combo-gauge-fill" 
-                     style={{ width: `${(comboTimeLeft / COMBO_LIMIT) * 100}%` }}
-                   ></div>
-                 </div>
-               )}
+               {isSuddenDeath && <span className="sudden-death-badge">💀 SUDDEN DEATH</span>}
+               {!isSuddenDeath && combo > 1 && <span className="combo-badge">🔥 {combo} COMBO!</span>}
+               {!isSuddenDeath && combo > 0 && <div className="combo-gauge-wrapper"><div className="combo-gauge-fill" style={{ width: `${(comboGauge / COMBO_LIMIT) * 100}%` }}></div></div>}
              </div>
-             <span className="timer-badge">⏱ {currentTimeDisplay}s</span>
+             <span className={`timer-badge ${isTimeAttack && timeLeft <= 10 ? 'urgent' : ''}`}>
+               ⏱ {isTimeAttack ? Math.ceil(timeLeft) : currentTimeDisplay}{isTimeAttack ? '' : 's'}
+             </span>
           </div>
           
           <div className="question-card-wrapper" key={animKey}>
@@ -876,13 +891,7 @@ function App() {
               {students.filter(s => s.id !== 37).map((s, index) => {
                 const isCompleted = completedIds.includes(s.id);
                 return (
-                  <button 
-                    key={s.id} 
-                    className={`game-seat-item ${isCompleted ? 'completed' : ''}`} 
-                    style={{ animationDelay: `${index * 0.02}s` }} 
-                    onClick={() => !isCompleted && handleSeatClick(s.id)}
-                    disabled={isCompleted}
-                  >
+                  <button key={s.id} className={`game-seat-item ${isCompleted ? 'completed' : ''}`} style={{ animationDelay: `${index * 0.02}s` }} onClick={() => !isCompleted && handleSeatClick(s.id)} disabled={isCompleted}>
                     {isCompleted ? s.name.split(' ')[0] : s.id}
                   </button>
                 )
@@ -890,44 +899,37 @@ function App() {
             </div>
           ) : inputMethod === 'typing' ? (
             <div className={`input-area ${isShake ? 'shake' : ''}`}>
-              <input
-                ref={inputRef}
-                type={gameMode === 'id' ? "tel" : "text"} 
-                inputMode={gameMode === 'id' ? "numeric" : "text"}
-                value={inputVal}
-                onChange={handleInputChange}
-                placeholder={getPlaceholder()}
-                autoFocus
-                className={isShake ? 'input-error' : ''}
-              />
+              <input ref={inputRef} type={gameMode === 'id' ? "tel" : "text"} inputMode={gameMode === 'id' ? "numeric" : "text"} value={inputVal} onChange={handleInputChange} placeholder={getPlaceholder()} autoFocus className={isShake ? 'input-error' : ''} />
             </div>
           ) : (
             <div className={`choice-grid ${isShake ? 'shake' : ''}`}>
               {choices.map((choice, i) => (
-                <button key={i} className="choice-btn" onClick={() => handleChoiceClick(choice)}>
-                  {choice}
-                </button>
+                <button key={i} className="choice-btn" onClick={() => handleChoiceClick(choice)}>{choice}</button>
               ))}
             </div>
           )}
 
-          <button onClick={handlePass} className="pass-button">パス {isSuddenDeath ? '(GAMEOVER)' : '(+5秒)'}</button>
+          <button onClick={handlePass} className="pass-button">パス {isSuddenDeath ? '(GAMEOVER)' : isTimeAttack ? '(-5秒)' : '(+5秒)'}</button>
           
           <div className="sub-game-menu">
             <button onClick={retryGame} className="icon-btn">🔄 やり直し</button>
             <button onClick={quitGame} className="icon-btn">🏠 タイトル</button>
           </div>
-
           {isPractice && !isRandomOrder && !isTeacher(currentStudent.id) && <p className="hint">次は {currentStudent.id + 1}番です</p>}
         </div>
       )}
 
+      {/* 結果画面 */}
       {screen === 'result' && (
         <div className="result-screen fade-in">
           {isGameOver && (
             <div className="game-over-container">
-              <h2 className="game-over-title">💀 GAME OVER 💀</h2>
-              <p className="game-over-text">サドンデス失敗...</p>
+              <h2 className="game-over-title">
+                {isTimeAttack ? "TIME UP!" : "💀 GAME OVER 💀"}
+              </h2>
+              <p className="game-over-text">
+                {isTimeAttack ? `Score: ${score}人` : "サドンデス失敗..."}
+              </p>
             </div>
           )}
 
@@ -935,14 +937,11 @@ function App() {
           {!isGameOver && isNewRecord && <div className="new-record-badge">✨ NEW RECORD!! ✨</div>}
           
           {!isGameOver && (
-            <h2>
-               {rankResult && <span className="rank-badge">RANK {rankResult}</span>}
-               🎉 CLEAR! 🎉
-            </h2>
+            <h2>{rankResult && <span className="rank-badge">RANK {rankResult}</span>} 🎉 CLEAR! 🎉</h2>
           )}
 
           <p className="sub-title">
-            {isSuddenDeath ? 'サドンデス' : isPractice ? '練習モード' : `${targetCount}人モード`} 
+            {isTimeAttack ? 'タイムアタック' : isSuddenDeath ? 'サドンデス' : isPractice ? '練習モード' : `${targetCount}人モード`} 
             ({gameMode === 'reading' ? 'ひらがな' : gameMode === 'name' ? '漢字' : gameMode === 'id' ? '番号' : '座席'})
           </p>
           
@@ -954,34 +953,24 @@ function App() {
             </div>
           )}
 
-          {!isGameOver && getWeaknessList().length > 0 && (
+          {!isGameOver && !isTimeAttack && getWeaknessList().length > 0 && (
             <div className="weakness-box">
               <h3>🐢 時間がかかった人</h3>
               <ul>
                 {getWeaknessList().map((item, i) => (
-                  <li key={i}>
-                    <span className="weakness-name">{isTeacher(item.student.id) ? "Teacher" : item.student.name.split(' ')[0]}</span>
-                    <span className="weakness-time">
-                      {item.isPass ? <span className="pass-tag">パス</span> : `${item.time.toFixed(1)}s`}
-                    </span>
-                  </li>
+                  <li key={i}><span className="weakness-name">{isTeacher(item.student.id) ? "Teacher" : item.student.name.split(' ')[0]}</span><span className="weakness-time">{item.isPass ? <span className="pass-tag">パス</span> : `${item.time.toFixed(1)}s`}</span></li>
                 ))}
               </ul>
-              <button onClick={startReviewGame} className="review-btn">
-                🔄 苦手な{getWeaknessList().length}人を復習する
-              </button>
+              <button onClick={startReviewGame} className="review-btn">🔄 苦手な{getWeaknessList().length}人を復習する</button>
             </div>
           )}
 
-          {!isGameOver && (
-            <div className="share-area">
-              <div className="share-buttons">
-                <button onClick={() => shareResult('line')} className="btn-line">LINE</button>
-                <button onClick={() => shareResult('x')} className="btn-x">X</button>
-              </div>
+          <div className="share-area">
+            <div className="share-buttons">
+              <button onClick={() => shareResult('line')} className="btn-line">LINE</button>
+              <button onClick={() => shareResult('x')} className="btn-x">X</button>
             </div>
-          )}
-
+          </div>
           <div className="retry-buttons">
             <button onClick={() => setScreen('start')} className="btn-primary">トップに戻る</button>
           </div>
