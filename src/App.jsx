@@ -168,7 +168,8 @@ function App() {
         if (isTimeAttack) {
           // タイムアタック: カウントダウン
           const elapsed = (now - startTime) / 1000;
-          const remain = Math.max(0, 60 - elapsed - penaltyTime); // penaltyTimeはマイナス値(ボーナス)として使う
+          // ペナルティタイムは「パス」の時だけ加算される（残り時間が減る）
+          const remain = Math.max(0, 60 - elapsed - penaltyTime); 
           setTimeLeft(remain);
           if (remain <= 0) {
             triggerGameOver(true); // 時間切れ
@@ -270,7 +271,6 @@ function App() {
     startCountdown();
   };
 
-  // ★追加：タイムアタック開始
   const startTimeAttackGame = (mode) => {
     const method = mode === 'seat' ? 'seat' : inputMethod;
     setPendingGameSettings({ 
@@ -360,7 +360,6 @@ function App() {
   const nextQuestion = (newCompletedIds) => {
     if (isTimeAttack) {
       // タイムアタック：無限ループ（ランダムに次を選ぶ）
-      // 直前と同じにならないようにする簡易ロジック
       let nextStudent = currentStudent;
       while (nextStudent.id === currentStudent.id) {
         nextStudent = questionList[Math.floor(Math.random() * questionList.length)];
@@ -396,10 +395,10 @@ function App() {
     
     if (isSuddenDeath) { triggerGameOver(); return; }
     if (isTimeAttack) {
-      // パスはスコア増えない & タイム減る
-      setPenaltyTime(prev => prev + 5); // 実際は残り時間が5秒減る
+      // パスはタイムアタックでもペナルティあり (-5秒)
+      setPenaltyTime(prev => prev + 5); 
       playSoundSafe('dummy');
-      nextQuestion(completedIds); // 完了IDは増やさない
+      nextQuestion(completedIds); 
       return;
     }
 
@@ -547,8 +546,9 @@ function App() {
       if (isTimeAttack) {
         // タイムアタック専用処理
         setScore(prev => prev + 1);
-        setPenaltyTime(prev => prev - 2); // 残り時間+2秒 (penaltyTimeを減らすことで残り時間を増やす)
-        // 統計は取らない（無限なので）
+        // ★修正：正解ボーナスなし（純粋な60秒）
+        // setPenaltyTime(prev => prev - 2); 
+        
         nextQuestion([]);
       } else {
         // 通常モード
@@ -569,7 +569,8 @@ function App() {
           if (isSuddenDeath) { triggerGameOver(); return; }
           
           if (isTimeAttack) {
-            setPenaltyTime(prev => prev + 5); // 残り時間-5秒
+            // ★修正：タイムアタックでのミスはペナルティなし（振動と音のみ）
+            // setPenaltyTime(prev => prev + 5); 
             setIsShake(true);
             playSoundSafe('dummy');
             return;
@@ -602,7 +603,7 @@ function App() {
   };
 
   const shareResult = (platform) => {
-    if (isGameOver && isSuddenDeath) return; // サドンデス失敗はシェアなし
+    if (isGameOver && isSuddenDeath) return; 
 
     let text = "";
     const modeStr = gameMode === 'reading' ? 'ひらがな' : gameMode === 'name' ? '漢字' : gameMode === 'id' ? '番号' : '座席';
@@ -679,7 +680,6 @@ function App() {
 
       {screen === 'start' && (
         <div className="start-screen fade-in">
-          {/* レベル・称号表示 */}
           <div className="level-card" style={{borderColor: levelInfo.color}}>
             <div className="level-title" style={{color: levelInfo.color}}>{levelInfo.title}</div>
             <div className="level-info">累計正解: {totalCorrectCount}回</div>
@@ -777,7 +777,6 @@ function App() {
         </div>
       )}
 
-      {/* 名簿画面（リスト形式） */}
       {screen === 'roster' && (
         <div className="roster-screen fade-in">
           <h2>成績リスト</h2>
@@ -802,7 +801,6 @@ function App() {
         </div>
       )}
 
-      {/* 練習設定 */}
       {screen === 'practice' && (
         <div className="practice-screen fade-in">
           <h2>練習モード設定</h2>
@@ -857,7 +855,6 @@ function App() {
         </div>
       )}
 
-      {/* ゲーム画面 */}
       {screen === 'game' && currentStudent && (
         <div className="game-screen fade-in">
           <div className="progress-bar-container">
@@ -919,7 +916,6 @@ function App() {
         </div>
       )}
 
-      {/* 結果画面 */}
       {screen === 'result' && (
         <div className="result-screen fade-in">
           {isGameOver && (
